@@ -1,0 +1,1435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAHAKAL GYM</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:#080808; --surface:#111111; --surface2:#181818;
+    --border:rgba(255,255,255,0.07); 
+    --red:#E50914;
+    --red-dim:rgba(229,9,20,0.15); --red-glow:rgba(229,9,20,0.35);
+    --gold:#C8A96E; --text:#FFFFFF; --muted:#888888; --muted2:#555555;
+  }
+  html { scroll-behavior: smooth; }
+  body { background:var(--bg); color:var(--text); font-family:'Barlow',sans-serif; font-weight:300; overflow-x:hidden; }
+  .container { padding:2rem; }
+
+  /* ═══════════════════════════════════════════
+     CUSTOM CURSOR
+  ═══════════════════════════════════════════ */
+  
+  /* ═══════════════════════════════════════════
+     PARTICLE CANVAS
+  ═══════════════════════════════════════════ */
+  #particle-canvas {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.45;
+  }
+
+  /* ═══════════════════════════════════════════
+     NOISE OVERLAY
+  ═══════════════════════════════════════════ */
+  body::before {
+    content:''; position:fixed; inset:0;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events:none; z-index:9999; opacity:0.35;
+  }
+
+  /* ═══════════════════════════════════════════
+     SCROLLBAR
+  ═══════════════════════════════════════════ */
+  ::-webkit-scrollbar { width:4px; }
+  ::-webkit-scrollbar-track { background:var(--bg); }
+  ::-webkit-scrollbar-thumb { background:var(--red); border-radius:2px; }
+
+  /* ═══════════════════════════════════════════
+     KEYFRAMES
+  ═══════════════════════════════════════════ */
+  @keyframes fadeUp    { from{opacity:0;transform:translateY(40px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes fadeIn    { from{opacity:0} to{opacity:1} }
+  @keyframes slideInL  { from{opacity:0;transform:translateX(-50px)} to{opacity:1;transform:translateX(0)} }
+  @keyframes slideInR  { from{opacity:0;transform:translateX(50px)} to{opacity:1;transform:translateX(0)} }
+  @keyframes scanline  { 0%{top:-10%} 100%{top:110%} }
+  @keyframes scrollTicker { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+  @keyframes pulse-red { 0%,100%{box-shadow:0 0 15px var(--red-glow)} 50%{box-shadow:0 0 40px rgba(229,9,20,0.7),0 0 80px rgba(229,9,20,0.3)} }
+  @keyframes float-up  { 0%{transform:translateY(0px)} 50%{transform:translateY(-8px)} 100%{transform:translateY(0px)} }
+  @keyframes border-spin {
+    0%  {background-position:0% 50%}
+    50% {background-position:100% 50%}
+    100%{background-position:0% 50%}
+  }
+  @keyframes shimmer {
+    0%   {background-position:-200% 0}
+    100% {background-position:200% 0}
+  }
+  @keyframes glitch-1 {
+    0%,96%,100%{clip-path:inset(0 0 100% 0);transform:translate(0)}
+    97%{clip-path:inset(10% 0 60% 0);transform:translate(-4px,2px)}
+    98%{clip-path:inset(40% 0 20% 0);transform:translate(4px,-2px)}
+    99%{clip-path:inset(70% 0 5%  0);transform:translate(-2px,0)}
+  }
+  @keyframes glitch-2 {
+    0%,94%,100%{clip-path:inset(0 0 100% 0);transform:translate(0)}
+    95%{clip-path:inset(5% 0 80% 0);transform:translate(4px,-2px)}
+    96%{clip-path:inset(60% 0 15% 0);transform:translate(-4px,2px)}
+    97%{clip-path:inset(85% 0 2%  0);transform:translate(2px,0)}
+  }
+  @keyframes counter-pop { 0%{transform:scale(1)} 40%{transform:scale(1.25)} 100%{transform:scale(1)} }
+  @keyframes line-grow { from{width:0} to{width:100%} }
+  @keyframes rotate-slow { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+  /* ═══════════════════════════════════════════
+     NAV
+  ═══════════════════════════════════════════ */
+  nav {
+    position:fixed; top:0; left:0; right:0; z-index:1000; height:72px;
+    display:flex; align-items:center; padding:0 40px;
+    background:rgba(8,8,8,0.92); backdrop-filter:blur(20px);
+    border-bottom:1px solid var(--border);
+    transition: background 0.4s, box-shadow 0.4s;
+  }
+  nav.scrolled { background:rgba(8,8,8,0.98); box-shadow:0 4px 60px rgba(229,9,20,0.08); }
+  .nav-inner { display:flex; align-items:center; justify-content:space-between; width:100%; max-width:1280px; margin:0 auto; }
+  .logo { font-family:'Bebas Neue',sans-serif; font-size:2rem; letter-spacing:0.06em; position:relative; }
+  .logo span { color:var(--red); }
+  .logo::after {
+    content: attr(data-text);
+    position:absolute; left:0; top:0; color:var(--red);
+    animation: glitch-1 6s infinite; pointer-events:none; opacity:0;
+  }
+  .logo:hover::after { opacity:0.6; }
+  .nav-links { display:flex; gap:36px; list-style:none; }
+  .nav-links a {
+    font-family:'Barlow Condensed',sans-serif; font-size:0.9rem; font-weight:600;
+    letter-spacing:0.12em; text-transform:uppercase; color:var(--muted);
+    text-decoration:none; transition:color 0.2s; position:relative; padding-bottom:4px;
+  }
+  .nav-links a::after {
+    content:''; position:absolute; bottom:0; left:50%; width:0; height:1px;
+    background:var(--red); transition:width 0.3s ease, left 0.3s ease;
+  }
+  .nav-links a:hover { color:var(--text); }
+  .nav-links a:hover::after { width:100%; left:0; }
+  .hamburger { display:none; flex-direction:column; gap:5px; background:none; border:none; cursor:pointer; padding:4px; }
+  .hamburger span { display:block; width:24px; height:2px; background:var(--text); border-radius:2px; transition:all 0.3s; }
+
+  /* ═══════════════════════════════════════════
+     HERO
+  ═══════════════════════════════════════════ */
+  .hero {
+    min-height:100vh; display:flex; flex-direction:column;
+    justify-content:flex-end; position:relative; overflow:hidden; padding:0 0 80px;
+  }
+  .hero-bg-img {
+    position:absolute; inset:0;
+    background-image:url('MAHAKAL.jpg');
+    background-size:cover; background-position:center 30%;
+    filter:brightness(0.25) saturate(0.7); transform:scale(1.08);
+    animation:fadeIn 1.5s ease both, hero-zoom 12s ease-in-out infinite alternate;
+  }
+  @keyframes hero-zoom {
+    from{transform:scale(1.08)} to{transform:scale(1.14)}
+  }
+  .hero-gradient {
+    position:absolute; inset:0;
+    background:linear-gradient(to top,var(--bg) 0%,transparent 50%,rgba(8,8,8,0.4) 100%);
+  }
+  /* Cinematic vignette */
+  .hero-vignette {
+    position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.75) 100%);
+  }
+  .hero-scan {
+    position:absolute; left:0; right:0; height:2px;
+    background:linear-gradient(90deg,transparent,var(--red),transparent);
+    opacity:0.5; animation:scanline 4s ease-in-out infinite;
+  }
+  /* Red side accent */
+  .hero-side-line {
+    position:absolute; left:0; top:20%; bottom:20%; width:3px;
+    background:linear-gradient(to bottom, transparent, var(--red), transparent);
+    opacity:0; animation:fadeIn 1s 1s ease forwards;
+  }
+  .hero-content { position:relative; z-index:2; max-width:1280px; margin:0 auto; width:100%; padding:0 40px; }
+  .hero-eyebrow {
+    font-family:'Barlow Condensed',sans-serif; font-size:0.8rem; font-weight:700;
+    letter-spacing:0.25em; text-transform:uppercase; color:var(--red); margin-bottom:20px;
+    display:flex; align-items:center; gap:12px;
+    animation:fadeUp 0.6s ease both;
+  }
+  .hero-eyebrow::before { content:''; width:40px; height:1px; background:var(--red); animation:line-grow 0.8s 0.3s ease both; }
+  .hero-title {
+    font-size:clamp(4.5rem,12vw,11rem); line-height:0.9; margin-bottom:32px; position:relative;
+  }
+  .hero-title .line { display:block; }
+  .hero-title .accent { color:var(--red); }
+  .hero-title .line:nth-child(1) { animation:fadeUp 0.7s 0.1s ease both; }
+  .hero-title .line:nth-child(2) { animation:fadeUp 0.7s 0.25s ease both; }
+  .hero-title .line:nth-child(3) { animation:fadeUp 0.7s 0.4s ease both; font-size:0.5em; letter-spacing:0.1em; }
+
+  /* Glitch clone overlays on title */
+  .hero-title-glitch {
+    position:absolute; top:0; left:0; pointer-events:none;
+    font-size:clamp(4.5rem,12vw,11rem); line-height:0.9; width:100%;
+  }
+  .hero-title-glitch .line { display:block; }
+  .hero-title-glitch.g1 { color:var(--red); animation:glitch-1 5s infinite; mix-blend-mode:screen; }
+  .hero-title-glitch.g2 { color:#00ffff; animation:glitch-2 5s 0.3s infinite; mix-blend-mode:screen; }
+
+  .hero-sub {
+    max-width:480px; font-size:1.05rem; color:var(--muted); line-height:1.7;
+    margin-bottom:44px; animation:fadeUp 0.6s 0.55s ease both;
+  }
+
+  /* Magnetic button */
+  .btn-primary {
+    font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:0.9rem;
+    letter-spacing:0.15em; text-transform:uppercase; background:var(--red); color:white;
+    border:none; padding:16px 40px; border-radius:2px; cursor:pointer;
+    transition:all 0.2s; box-shadow:0 0 25px var(--red-glow);
+    position:relative; overflow:hidden;
+    animation:pulse-red 3s ease-in-out infinite;
+  }
+  .btn-primary::before {
+    content:''; position:absolute; inset:0;
+    background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.18) 50%,transparent 100%);
+    background-size:200% 100%; transform:translateX(-100%);
+    transition:transform 0.5s ease;
+  }
+  .btn-primary:hover::before { transform:translateX(100%); }
+  .btn-primary:hover { background:#ff0a17; transform:translateY(-3px) scale(1.02); box-shadow:0 8px 40px rgba(229,9,20,0.6); }
+
+  .hero-stats {
+    position:absolute; right:40px; bottom:80px; z-index:2;
+    display:flex; flex-direction:column; gap:20px;
+    animation:slideInR 0.7s 0.5s ease both;
+  }
+  .stat-item { text-align:right; }
+  .stat-num {
+    font-family:'Bebas Neue',sans-serif; font-size:2.8rem; line-height:1; color:var(--red);
+    transition:transform 0.3s; display:inline-block;
+  }
+  .stat-item:hover .stat-num { transform:scale(1.1); }
+  .stat-lbl { font-family:'Barlow Condensed',sans-serif; font-size:0.75rem; font-weight:600; letter-spacing:0.2em; text-transform:uppercase; color:var(--muted); }
+
+  .hero-ticker { position:absolute; bottom:0; left:0; right:0; z-index:2; background:var(--red); padding:10px 0; overflow:hidden; display:flex; }
+  .ticker-track { display:flex; gap:60px; white-space:nowrap; animation:scrollTicker 20s linear infinite; font-family:'Bebas Neue',sans-serif; font-size:0.85rem; letter-spacing:0.2em; }
+  .ticker-item { display:flex; align-items:center; gap:20px; }
+  .ticker-dot { width:5px; height:5px; background:white; border-radius:50%; opacity:0.6; }
+
+  /* ═══════════════════════════════════════════
+     SECTION BASE
+  ═══════════════════════════════════════════ */
+  section { padding:100px 40px; position:relative; z-index:1; }
+  .section-inner { max-width:1280px; margin:0 auto; }
+  .section-label {
+    font-family:'Barlow Condensed',sans-serif; font-size:0.75rem; font-weight:700;
+    letter-spacing:0.25em; text-transform:uppercase; color:var(--red); margin-bottom:16px;
+    display:flex; align-items:center; gap:12px;
+  }
+  .section-label::before { content:''; width:30px; height:1px; background:var(--red); }
+  .section-title { font-size:clamp(2.8rem,6vw,5rem); line-height:0.95; margin-bottom:16px; }
+
+  /* ═══════════════════════════════════════════
+     FEATURES STRIP
+  ═══════════════════════════════════════════ */
+  .features-strip { background:var(--surface); border-top:1px solid var(--border); border-bottom:1px solid var(--border); padding:0 40px; position:relative; z-index:1; }
+  .features-grid { max-width:1280px; margin:0 auto; display:grid; grid-template-columns:repeat(7,1fr); }
+  .feature-item {
+    padding:48px 32px; border-right:1px solid var(--border);
+    transition:background 0.3s, transform 0.3s; position:relative; overflow:hidden;
+  }
+  .feature-item:last-child { border-right:none; }
+  .feature-item::after { content:''; position:absolute; bottom:0; left:0; width:0; height:2px; background:var(--red); transition:width 0.4s ease; }
+  .feature-item:hover::after { width:100%; }
+  .feature-item:hover { background:var(--surface2); transform:translateY(-4px); }
+  .feature-icon { font-size:2rem; margin-bottom:20px; display:inline-block; transition:transform 0.3s ease; }
+  .feature-item:hover .feature-icon { transform:scale(1.2) rotate(-5deg); animation:float-up 2s ease-in-out infinite; }
+  .feature-title { font-family:'Barlow Condensed',sans-serif; font-size:1.15rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:10px; }
+  .feature-desc { font-size:0.88rem; color:var(--muted); line-height:1.65; }
+
+  /* ═══════════════════════════════════════════
+     SLIDER
+  ═══════════════════════════════════════════ */
+  .slider-wrapper { position:relative; max-width:48rem; margin:0 auto; }
+  .slider { position:relative; aspect-ratio:16/9; border-radius:0.5rem; box-shadow:0 1.5rem 3rem -0.75rem hsla(0,0%,0%,0.25); overflow:hidden; }
+  .slider::before {
+    content:''; position:absolute; inset:0; z-index:2; pointer-events:none;
+    box-shadow: inset 0 0 80px rgba(229,9,20,0.12);
+  }
+  .slider img { position:absolute; inset:0; width:100%; height:100%; opacity:0; transition:opacity 0.9s cubic-bezier(0.4,0,0.2,1), transform 0.9s cubic-bezier(0.4,0,0.2,1); pointer-events:none; transform:scale(1.04); }
+  .slider img.active { opacity:1; transform:scale(1); }
+  .slider-nav { display:flex; column-gap:1rem; position:absolute; bottom:1.25rem; left:50%; transform:translateX(-50%); z-index:3; }
+  .slider-nav button { width:0.5rem; height:0.5rem; border-radius:50%; background-color:#fff; opacity:0.75; border:none; cursor:pointer; transition:opacity 250ms, transform 250ms, background 250ms; padding:0; }
+  .slider-nav button:hover { opacity:1; }
+  .slider-nav button.active { opacity:1; transform:scale(1.4); background:var(--red); }
+
+  /* ═══════════════════════════════════════════
+     MAP
+  ═══════════════════════════════════════════ */
+  .map-card { width:100%; max-width:720px; border-radius:16px; overflow:hidden; border:1px solid var(--border); box-shadow:0 0 60px rgba(255,69,0,0.08),0 20px 60px rgba(0,0,0,0.6); animation:fadeUp 0.7s ease 0.15s both; }
+  .map-card iframe { display:block; width:100%; height:420px; border:none; }
+
+  /* ═══════════════════════════════════════════
+     MEMBERSHIP PLANS
+  ═══════════════════════════════════════════ */
+  #memberships { background:var(--bg); }
+  .plans-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:2px; margin-top:60px; }
+  .plan-card { background:var(--surface); padding:48px 36px; position:relative; overflow:hidden; transition:transform 0.4s cubic-bezier(0.23,1,0.32,1), box-shadow 0.4s; border-top:3px solid transparent; }
+  .plan-card::before { content:''; position:absolute; inset:0; background:radial-gradient(circle at 50% 0%, rgba(229,9,20,0.06), transparent 70%); opacity:0; transition:opacity 0.4s; }
+  .plan-card:hover { transform:translateY(-8px); box-shadow:0 20px 60px rgba(0,0,0,0.5); }
+  .plan-card:hover::before { opacity:1; }
+  .plan-card.featured { border-top-color:var(--red); background:var(--surface2); }
+  .plan-card.premium { border-top-color:var(--gold); }
+  .plan-badge { position:absolute; top:20px; right:20px; font-family:'Barlow Condensed',sans-serif; font-size:0.7rem; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; background:var(--red); color:white; padding:4px 12px; border-radius:2px; }
+  .plan-badge.gold { background:var(--gold); color:#111; }
+  .plan-tier { font-family:'Barlow Condensed',sans-serif; font-size:0.8rem; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
+  .plan-name { font-size:2.5rem; margin-bottom:8px; }
+  .plan-price { display:flex; align-items:baseline; gap:4px; margin-bottom:32px; }
+  .plan-currency { font-family:'Barlow Condensed',sans-serif; font-size:1.2rem; color:var(--muted); align-self:flex-start; margin-top:8px; }
+  .plan-amount { font-family:'Bebas Neue',sans-serif; font-size:4.5rem; line-height:1; }
+  .plan-period { font-family:'Barlow Condensed',sans-serif; font-size:0.85rem; color:var(--muted); }
+  .plan-divider { height:1px; background:var(--border); margin-bottom:28px; }
+  .plan-features { list-style:none; display:flex; flex-direction:column; gap:14px; margin-bottom:40px; }
+  .plan-features li { display:flex; align-items:flex-start; gap:12px; font-size:0.9rem; }
+  .plan-features li .check { color:var(--red); font-size:0.8rem; flex-shrink:0; margin-top:2px; }
+  .plan-features li .check.gold { color:var(--gold); }
+  .plan-features li.muted-item { color:var(--muted2); }
+  .plan-features li.muted-item .check { color:var(--muted2); }
+
+  /* ═══════════════════════════════════════════
+     COURSES/STORE
+  ═══════════════════════════════════════════ */
+  #store { background:var(--surface); }
+  .store-header { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:60px; }
+  .products-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:2px; }
+  .product-card { background:var(--bg); overflow:hidden; position:relative; cursor:pointer; transition:transform 0.4s cubic-bezier(0.23,1,0.32,1); }
+  .product-card:hover { transform:translateY(-6px); }
+  .product-card::after { content:''; position:absolute; inset:0; background:linear-gradient(to top, rgba(229,9,20,0.15), transparent); opacity:0; transition:opacity 0.4s; pointer-events:none; }
+  .product-card:hover::after { opacity:1; }
+  .product-img { width:100%; aspect-ratio:1; background:var(--surface2); display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative; border-bottom:1px solid var(--border); }
+  .product-img-inner { width:100%; height:100%; display:flex; align-items:center; justify-content:center; transition:transform 0.5s cubic-bezier(0.23,1,0.32,1); background:radial-gradient(circle at center,var(--surface2),var(--bg)); }
+  .product-img-inner img { width:100%; height:100%; object-fit:cover; }
+  .product-card:hover .product-img-inner { transform:scale(1.1); }
+  .product-tag { position:absolute; top:14px; left:14px; font-family:'Barlow Condensed',sans-serif; font-size:0.65rem; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; background:var(--red); color:white; padding:3px 10px; border-radius:2px; z-index:2; }
+  .product-info { padding:24px 20px; }
+  .product-name { font-family:'Barlow Condensed',sans-serif; font-size:1.2rem; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; margin-bottom:12px; }
+
+  /* ═══════════════════════════════════════════
+     BMI / BMR
+  ═══════════════════════════════════════════ */
+  #bmi { background:var(--bg); }
+  #bmr { background:var(--surface); }
+  .bmi-layout { display:grid; grid-template-columns:1fr 1fr; gap:80px; align-items:start; }
+  .bmi-card {
+    background:var(--surface2); border:1px solid var(--border); padding:48px; border-radius:4px;
+    position:relative; overflow:hidden;
+    transition: border-color 0.4s, box-shadow 0.4s;
+  }
+  .bmi-card:hover { border-color:rgba(229,9,20,0.3); box-shadow:0 0 60px rgba(229,9,20,0.06); }
+  .bmi-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--red),transparent); animation:shimmer 3s ease-in-out infinite; background-size:200% 100%; }
+  .bmi-form { display:flex; flex-direction:column; gap:20px; }
+  .input-group { display:flex; flex-direction:column; gap:8px; }
+  .input-label { font-family:'Barlow Condensed',sans-serif; font-size:0.75rem; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:var(--muted); }
+  .input-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .bmi-input { width:100%; background:var(--bg); color:var(--text); border:1px solid var(--border); padding:14px 16px; font-family:'Barlow',sans-serif; font-size:1rem; border-radius:2px; outline:none; transition:border-color 0.3s, box-shadow 0.3s; }
+  .bmi-input::-webkit-inner-spin-button,.bmi-input::-webkit-outer-spin-button { -webkit-appearance:none; }
+  .bmi-input:focus { border-color:var(--red); box-shadow:0 0 0 3px rgba(229,9,20,0.1); }
+  .unit-toggle { display:flex; background:var(--bg); border:1px solid var(--border); border-radius:2px; overflow:hidden; }
+  .unit-btn { flex:1; font-family:'Barlow Condensed',sans-serif; font-size:0.8rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; padding:10px; border:none; background:transparent; color:var(--muted); cursor:pointer; transition:all 0.25s; }
+  .unit-btn.active { background:var(--red); color:white; }
+  .bmi-result { margin-top:8px; padding:24px; background:var(--bg); border:1px solid var(--border); border-radius:2px; display:none; }
+  .bmi-result.visible { display:block; animation:fadeUp 0.4s ease; }
+  .bmi-result-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; }
+  .bmi-number { font-family:'Bebas Neue',sans-serif; font-size:4rem; line-height:1; color:var(--red); }
+  .bmi-status { font-family:'Barlow Condensed',sans-serif; font-size:0.85rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; padding:4px 12px; border-radius:2px; align-self:flex-start; margin-top:8px; }
+  .bmi-bar-track { height:6px; background:var(--surface2); border-radius:3px; overflow:hidden; margin-bottom:12px; }
+  .bmi-bar-fill { height:100%; border-radius:3px; transition:width 1s cubic-bezier(0.23,1,0.32,1); background:var(--red); }
+  .bmi-ranges { display:flex; justify-content:space-between; }
+  .bmi-range-lbl { font-family:'Barlow Condensed',sans-serif; font-size:0.65rem; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted2); }
+  .bmi-tip { margin-top:20px; padding-top:16px; border-top:1px solid var(--border); font-size:0.85rem; color:var(--muted); line-height:1.6; }
+  .bmi-tip strong { color:var(--text); font-weight:500; }
+  .bmi-info-title { font-size:clamp(2.5rem,5vw,4.5rem); line-height:0.95; margin-bottom:24px; }
+  .bmi-cards { display:flex; flex-direction:column; gap:12px; margin-top:36px; }
+  .bmi-mini-card { display:flex; align-items:center; gap:20px; padding:20px 24px; background:var(--surface2); border:1px solid var(--border); border-radius:2px; transition:border-color 0.3s, transform 0.3s, box-shadow 0.3s; }
+  .bmi-mini-card:hover { border-color:var(--red); transform:translateX(6px); box-shadow:-4px 0 0 var(--red); }
+  .bmi-mini-icon { font-size:1.5rem; }
+  .bmi-mini-label { font-family:'Barlow Condensed',sans-serif; font-size:0.75rem; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; color:var(--muted); }
+  .bmi-mini-val { font-family:'Bebas Neue',sans-serif; font-size:1.4rem; }
+  .macro-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:16px; }
+  .macro-card { background:var(--surface2); border-radius:2px; padding:16px 12px; text-align:center; transition:transform 0.3s; }
+  .macro-card:hover { transform:translateY(-4px); }
+  .macro-icon { font-size:1.5rem; margin-bottom:8px; }
+  .macro-val { font-family:'Bebas Neue',sans-serif; font-size:2rem; line-height:1; margin-bottom:4px; }
+  .macro-name { font-family:'Barlow Condensed',sans-serif; font-size:0.7rem; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; margin-bottom:2px; }
+  .macro-sub { font-family:'Barlow Condensed',sans-serif; font-size:0.62rem; color:var(--muted2); }
+  .macro-bar-wrap { margin-top:16px; }
+  .macro-bar-label { display:flex; justify-content:space-between; font-family:'Barlow Condensed',sans-serif; font-size:0.7rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+  .macro-bar-track { height:8px; background:var(--surface2); border-radius:4px; overflow:hidden; display:flex; }
+  .macro-bar-seg { height:100%; transition:width 1s cubic-bezier(0.23,1,0.32,1); }
+
+  /* ═══════════════════════════════════════════
+     TRAINERS
+  ═══════════════════════════════════════════ */
+  #trainers { background:var(--surface); padding:100px 40px; }
+  .trainers-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:2px; margin-top:60px; }
+  .trainer-card { background:var(--bg); overflow:hidden; position:relative; }
+  .trainer-img { width:100%; aspect-ratio:4/5; background:var(--surface2); display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative; }
+  .trainer-avatar { font-size:6rem; transition:transform 0.5s cubic-bezier(0.23,1,0.32,1); width:100%; height:100%; display:flex; align-items:center; justify-content:center; }
+  .trainer-avatar img { width:100%; height:100%; object-fit:cover; transition:transform 0.5s cubic-bezier(0.23,1,0.32,1), filter 0.5s; filter:saturate(0.8); }
+  .trainer-card:hover .trainer-avatar img { transform:scale(1.08); filter:saturate(1.1); }
+  .trainer-card:hover .trainer-avatar { transform:scale(1.1); }
+  .trainer-overlay { position:absolute; inset:0; background:linear-gradient(to top,rgba(8,8,8,0.95),transparent 60%); }
+  /* Trainer hover red tint */
+  .trainer-img::after { content:''; position:absolute; inset:0; background:rgba(229,9,20,0.12); opacity:0; transition:opacity 0.4s; pointer-events:none; }
+  .trainer-card:hover .trainer-img::after { opacity:1; }
+  .trainer-meta { position:absolute; bottom:24px; left:24px; right:24px; transform:translateY(6px); transition:transform 0.4s; }
+  .trainer-card:hover .trainer-meta { transform:translateY(0); }
+  .trainer-name { font-size:1.8rem; margin-bottom:2px; }
+  .trainer-spec { font-family:'Barlow Condensed',sans-serif; font-size:0.8rem; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; color:var(--red); }
+  .trainer-info { padding:24px; }
+  .trainer-stats-row { display:flex; gap:24px; }
+  .t-stat-num { font-family:'Bebas Neue',sans-serif; font-size:1.6rem; color:var(--red); }
+  .t-stat-lbl { font-family:'Barlow Condensed',sans-serif; font-size:0.65rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); }
+
+  #location { background:var(--bg); padding:100px 40px; }
+  #events-featured { background:var(--surface); }
+  #events { background:var(--surface); padding:100px 40px; }
+
+  /* ═══════════════════════════════════════════
+     FOOTER
+  ═══════════════════════════════════════════ */
+  footer { background:var(--surface); border-top:1px solid var(--border); padding:60px 40px 30px; position:relative; z-index:1; }
+  .footer-inner { max-width:1280px; margin:0 auto; }
+  .footer-top { display:grid; grid-template-columns:2fr 1fr 1fr; gap:60px; margin-bottom:60px; }
+  .footer-logo { font-family:'Bebas Neue',sans-serif; font-size:2.5rem; letter-spacing:0.05em; margin-bottom:16px; }
+  .footer-logo span { color:var(--red); }
+  .footer-desc { font-size:0.88rem; color:var(--muted); line-height:1.7; max-width:280px; }
+  .footer-col-title { font-family:'Barlow Condensed',sans-serif; font-size:0.75rem; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; color:var(--muted2); margin-bottom:20px; }
+  .footer-links { list-style:none; display:flex; flex-direction:column; gap:12px; }
+  .footer-links a { font-size:0.88rem; color:var(--muted); text-decoration:none; transition:color 0.2s, padding-left 0.2s; }
+  .footer-links a:hover { color:var(--text); padding-left:6px; }
+  .footer-bottom { display:flex; justify-content:space-between; align-items:center; padding-top:30px; border-top:1px solid var(--border); }
+  .footer-copy { font-size:0.8rem; color:var(--muted2); }
+  .footer-socials { display:flex; gap:16px; }
+  .social-btn { width:36px; height:36px; border:1px solid var(--border); border-radius:2px; display:flex; align-items:center; justify-content:center; font-size:0.85rem; color:var(--muted); cursor:pointer; transition:all 0.3s; text-decoration:none; position:relative; overflow:hidden; }
+  .social-btn::before { content:''; position:absolute; inset:0; background:var(--red); transform:translateY(100%); transition:transform 0.3s ease; z-index:0; }
+  .social-btn:hover { border-color:var(--red); color:white; }
+  .social-btn:hover::before { transform:translateY(0); }
+  .social-btn i { position:relative; z-index:1; }
+
+  /* ═══════════════════════════════════════════
+     SCROLL REVEAL
+  ═══════════════════════════════════════════ */
+  .reveal   { opacity:0; transform:translateY(30px); transition:opacity 0.7s ease, transform 0.7s cubic-bezier(0.23,1,0.32,1); }
+  .reveal-l { opacity:0; transform:translateX(-30px); transition:opacity 0.7s ease, transform 0.7s cubic-bezier(0.23,1,0.32,1); }
+  .reveal-r { opacity:0; transform:translateX(30px);  transition:opacity 0.7s ease, transform 0.7s cubic-bezier(0.23,1,0.32,1); }
+  .reveal.visible, .reveal-l.visible, .reveal-r.visible { opacity:1; transform:translate(0); }
+
+  /* ═══════════════════════════════════════════
+     PAGE TRANSITION OVERLAY
+  ═══════════════════════════════════════════ */
+  .page-enter {
+    position:fixed; inset:0; z-index:99997;
+    background:var(--red);
+    animation:page-enter-anim 0.8s cubic-bezier(0.77,0,0.18,1) forwards;
+  }
+  @keyframes page-enter-anim {
+    0%  {transform:translateY(0)}
+    100%{transform:translateY(-100%)}
+  }
+
+  /* ═══════════════════════════════════════════
+     RESPONSIVE
+  ═══════════════════════════════════════════ */
+  @media(max-width:1024px){
+    .plans-grid{grid-template-columns:1fr}
+    .products-grid{grid-template-columns:repeat(2,1fr)}
+    .bmi-layout{grid-template-columns:1fr}
+    .trainers-grid{grid-template-columns:1fr 1fr}
+    .footer-top{grid-template-columns:1fr 1fr;gap:40px}
+    .features-grid{grid-template-columns:repeat(4,1fr)}
+  }
+  @media(max-width:768px){
+    nav{padding:0 20px}
+    .hamburger{display:flex}
+    .nav-links{display:none;flex-direction:column;gap:0;position:absolute;top:72px;left:0;right:0;background:rgba(8,8,8,0.97);border-bottom:1px solid var(--border);padding:12px 0;}
+    .nav-links.open{display:flex}
+    .nav-links a{padding:14px 24px;}
+    section{padding:80px 20px}
+    .hero-content{padding:0 20px}
+    .hero-stats{display:none}
+    .hero-title{font-size:4.5rem}
+    .features-grid{grid-template-columns:1fr 1fr}
+    .products-grid{grid-template-columns:1fr}
+    .trainers-grid{grid-template-columns:1fr}
+    .footer-top{grid-template-columns:1fr}
+    .store-header{flex-direction:column;align-items:flex-start;gap:16px}
+    .macro-grid{grid-template-columns:1fr 1fr 1fr}
+    .bmi-card{padding:28px}
+  }
+
+  /* ═══════════════════════════════════════════
+     SECTION DIVIDER LINES
+  ═══════════════════════════════════════════ */
+  .section-divider {
+    height:1px; width:100%;
+    background:linear-gradient(90deg,transparent,var(--red),transparent);
+    opacity:0.3;
+  }
+
+  /* ═══════════════════════════════════════════
+     COUNTER
+  ═══════════════════════════════════════════ */
+  .stat-num[data-target] { transition:transform 0.3s; }
+
+  /* RED GLOW RING on section titles */
+  .section-title .red-word {
+    position:relative; display:inline-block;
+  }
+  .section-title .red-word::after {
+    content:''; position:absolute; bottom:-4px; left:0; right:0; height:2px;
+    background:var(--red); transform:scaleX(0); transform-origin:left;
+    transition:transform 0.6s ease; border-radius:2px;
+  }
+  .section-title .red-word.visible::after { transform:scaleX(1); }
+</style>
+</head>
+<body>
+
+<!-- PAGE TRANSITION -->
+<div class="page-enter" id="pageEnter"></div>
+
+
+
+<!-- PARTICLE CANVAS -->
+<canvas id="particle-canvas"></canvas>
+
+<!-- NAV -->
+<nav id="mainNav">
+  <div class="nav-inner">
+    <div class="logo" data-text="MAHAKAL GYM">MAHAKAL GYM<span> AND FITNESS STUDIO</span></div>
+    <button class="hamburger" id="hamburger" onclick="toggleMenu()">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="nav-links">
+      <li><a href="#memberships">Gym Plans</a></li>
+      <li><a href="#store">Courses</a></li>
+      <li><a href="#trainers">Trainers</a></li>
+      <li><a href="#bmi">BMI Calculator</a></li>
+      <li><a href="#bmr">BMR Calculator</a></li>
+      <li><a href="#location">Location</a></li>
+      <li><a href="#events">Events</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg-img"></div>
+  <div class="hero-gradient"></div>
+  <div class="hero-vignette"></div>
+  <div class="hero-scan"></div>
+  <div class="hero-side-line"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">Est. 2024 &nbsp;·&nbsp; Premium Gym</div>
+    <div style="position:relative;display:inline-block;">
+      <h1 class="hero-title">
+        <span class="line">MAKE</span>
+        <span class="line accent">YOUR</span>
+        <span class="line">LEGACY</span>
+      </h1>
+      <h1 class="hero-title hero-title-glitch g1" aria-hidden="true">
+        <span class="line">MAKE</span>
+        <span class="line accent">YOUR</span>
+        <span class="line">LEGACY</span>
+      </h1>
+      <h1 class="hero-title hero-title-glitch g2" aria-hidden="true">
+        <span class="line">MAKE</span>
+        <span class="line accent">YOUR</span>
+        <span class="line">LEGACY</span>
+      </h1>
+    </div>
+    <p class="hero-sub">Premium training, elite supplements, and a community built on strength. Your transformation starts the moment you walk through the door.</p>
+  </div>
+  <div class="hero-stats">
+    <div class="stat-item"><div class="stat-num" data-target="230" data-suffix="+">0+</div><div class="stat-lbl">Active Members</div></div>
+    <div class="stat-item"><div class="stat-num" data-target="3" data-suffix="">0</div><div class="stat-lbl">Trainers</div></div>
+    <div class="stat-item"><div class="stat-num" data-target="97" data-suffix="%">0%</div><div class="stat-lbl">Satisfaction Rate</div></div>
+    <div class="stat-item"><div class="stat-num" data-target="4.8" data-suffix="★" data-decimal="1">0★</div><div class="stat-lbl">Rating</div></div>
+  </div>
+  <div class="hero-ticker">
+    <div class="ticker-track">
+      <span class="ticker-item">Elite Equipment <span class="ticker-dot"></span></span>
+      <span class="ticker-item">Expert Coaching <span class="ticker-dot"></span></span>
+      <span class="ticker-item">Morning &amp; Evening Access <span class="ticker-dot"></span></span>
+      <span class="ticker-item">Premium Supplements <span class="ticker-dot"></span></span>
+      <span class="ticker-item">Recovery Zone <span class="ticker-dot"></span></span>
+      <span class="ticker-item">Nutrition Plans <span class="ticker-dot"></span></span>
+      <span class="ticker-item">Group Classes <span class="ticker-dot"></span></span>
+      <span class="ticker-item">Personal Training <span class="ticker-dot"></span></span>
+      <span class="ticker-item">Elite Equipment <span class="ticker-dot"></span></span>
+      <span class="ticker-item">Expert Coaching <span class="ticker-dot"></span></span>
+      <span class="ticker-item">Morning &amp; Evening Access <span class="ticker-dot"></span></span>
+      <span class="ticker-item">Premium Supplements <span class="ticker-dot"></span></span>
+      <span class="ticker-item">Recovery Zone <span class="ticker-dot"></span></span>
+      <span class="ticker-item">Nutrition Plans <span class="ticker-dot"></span></span>
+      <span class="ticker-item">Group Classes <span class="ticker-dot"></span></span>
+      <span class="ticker-item">Personal Training <span class="ticker-dot"></span></span>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- FEATURES STRIP -->
+<div class="features-strip">
+  <div class="features-grid">
+    <div class="feature-item reveal">
+      <div class="feature-icon">🏋️</div>
+      <div class="feature-title">Elite Equipment</div>
+      <div class="feature-desc">30+ machines and free weights from Technogym, Rogue, and Life Fitness — maintained to showroom standard daily.</div>
+    </div>
+    <div class="feature-item reveal" style="transition-delay:0.1s">
+      <div class="feature-icon">🧠</div>
+      <div class="feature-title">Expert Trainers</div>
+      <div class="feature-desc">3 coaches across bodybuilding, yoga, Karate and sport-specific performance training.</div>
+    </div>
+    <div class="feature-item reveal" style="transition-delay:0.2s">
+      <div class="feature-icon">🌙</div>
+      <div class="feature-title">Morning (5AM–1PM) Evening (3PM–9:30PM) Access</div>
+      <div class="feature-desc">Train on your schedule so your goals never have a closing time.</div>
+    </div>
+    <div class="feature-item reveal" style="transition-delay:0.3s">
+      <div class="feature-icon">🥤</div>
+      <div class="feature-title">In-House Store</div>
+      <div class="feature-desc">Curated supplements from Optimum Nutrition, Whey Protein, and exclusive label blends.</div>
+    </div>
+    <div class="feature-item reveal" style="transition-delay:0.1s">
+      <div class="feature-icon"><i class="fa-solid fa-temperature-arrow-down"></i></div>
+      <div class="feature-title">Full AC Feature</div>
+      <div class="feature-desc">Fully air conditioned gym. So your goals never stop.</div>
+    </div>
+    <div class="feature-item reveal" style="transition-delay:0.1s">
+      <div class="feature-icon">🏍</div>
+      <div class="feature-title">3000 sq ft Parking</div>
+      <div class="feature-desc">3000 square foot Parking Lot — so you never have to think about parking.</div>
+    </div>
+    <div class="feature-item reveal" style="transition-delay:0.1s">
+      <div class="feature-icon">💪</div>
+      <div class="feature-title">1600 sq ft Gym Area</div>
+      <div class="feature-desc">1600 square foot gym area with a wide, open training floor.</div>
+    </div>
+  </div>
+</div>
+
+<div class="section-divider"></div>
+
+<!-- EVENTS FEATURED -->
+<section id="events-featured">
+  <div class="section-inner">
+    <div class="section-label reveal">MAHAKAL GYM AND FITNESS STUDIO Info</div>
+    <h2 class="section-title reveal">MAHAKAL Gym and Fitness Studio<br><span style="color:var(--red)">Info</span></h2>
+    <div class="container" style="margin-top:48px;">
+      <div class="slider-wrapper">
+        <div class="slider" id="featuredSlider">
+          <img src="MAHAKAL.jpg" class="active" alt="Championship 1">
+          <img src="image8.jpg" alt="">
+          <img src="image7.jpg" alt="Championship 3">
+          <img src="image6.jpg" alt="Championship 3">
+          <img src="image5.jpg" alt="">
+          <img src="image4.jpg" alt="">
+          <img src="image3.jpg" alt="">
+        </div>
+        <div class="slider-nav" id="featuredSliderNav">
+          <button class="active" data-index="0" aria-label="Slide 1"></button>
+          <button data-index="1" aria-label="Slide 2"></button>
+          <button data-index="2" aria-label="Slide 3"></button>
+          <button data-index="3" aria-label="Slide 4"></button>
+          <button data-index="4" aria-label="Slide 5"></button>
+          <button data-index="5" aria-label="Slide 6"></button>
+          <button data-index="6" aria-label="Slide 7"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- MEMBERSHIP PLANS -->
+<section id="memberships">
+  <div class="section-inner">
+    <div class="section-label reveal">Membership Plans</div>
+    <h2 class="section-title reveal">Choose Your<br><span style="color:var(--red)">MEMBERSHIP Plan</span></h2>
+    <br>
+    <h2 class="section-title reveal">MEMBERSHIP Fee &nbsp;<span style="color:var(--red)">₹1500</span></h2>
+    <div class="plans-grid">
+      <div class="plan-card premium reveal">
+        <div class="plan-badge gold"><i class="fa-solid fa-crown"></i> VIP</div>
+        <div class="plan-tier"></div>
+        <div class="plan-name">Premium Personal Trainer</div>
+        <div class="plan-price"><span class="plan-currency">₹</span><span class="plan-amount">4,999</span><span class="plan-period">&nbsp;/ month</span></div>
+        <div class="plan-divider"></div>
+        <ul class="plan-features">
+          <li><span class="check gold">✦</span> Unlimited gym access</li>
+          <li><span class="check gold">✦</span> Full Guidance</li>
+          <li><span class="check gold">✦</span> Full Nutrition Guide</li>
+          <li><span class="check gold">✦</span> Locker Room Access</li>
+          <li><span class="check gold">✦</span> Perfect Workout Guidance</li>
+          <li><span class="check gold">✦</span> Customize Diet plan</li>
+          <li><span class="check gold">✦</span> Personal training sessions</li>
+          <li><span class="check gold">✦</span> Customize Workout routine</li>
+        </ul>
+      </div>
+      <div class="plan-card premium reveal" style="transition-delay:0.05s">
+        <div class="plan-badge gold"><i class="fa-solid fa-crown"></i> Elite</div>
+        <div class="plan-tier"></div>
+        <div class="plan-name">Personal Trainer</div>
+        <div class="plan-price"><span class="plan-currency">₹</span><span class="plan-amount">1,999</span><span class="plan-period">&nbsp;/ month</span></div>
+        <div class="plan-divider"></div>
+        <ul class="plan-features">
+          <li><span class="check gold">✦</span> Unlimited gym access</li>
+          <li><span class="check gold">✦</span> Full Guidance</li>
+          <li><span class="check gold">✦</span> Full Nutrition Guide</li>
+          <li><span class="check gold">✦</span> Perfect Workout Guidance</li>
+          <li><span class="check gold">✦</span> Customize Diet plan</li>
+          <li><span class="check gold">✦</span> Personal training sessions</li>
+          <li><span class="check gold">✦</span> Customize Workout routine</li>
+        </ul>
+      </div>
+      <div class="plan-card reveal" style="transition-delay:0.1s">
+        <div class="plan-tier">Starter</div>
+        <div class="plan-name">Monthly</div>
+        <div class="plan-price"><span class="plan-currency">₹</span><span class="plan-amount">699</span><span class="plan-period">&nbsp;/ month</span></div>
+        <div class="plan-divider"></div>
+        <ul class="plan-features">
+          <li><span class="check">✦</span> Unlimited gym access</li>
+          <li><span class="check">✦</span> Cardio &amp; machine zone</li>
+          <li><span class="check">✦</span> 24/7 access</li>
+          <li><span class="check">✦</span> Custom meal plan</li>
+          <li><span class="check">✦</span> 2 classes/month on any 2 courses</li>
+          <li class="muted-item"><span class="check">✕</span> Personal trainer sessions</li>
+        </ul>
+      </div>
+      <div class="plan-card reveal" style="transition-delay:0.15s">
+        <div class="plan-tier">Save up to ₹198</div>
+        <div class="plan-name">3 Month</div>
+        <div class="plan-price"><span class="plan-currency">₹</span><span class="plan-amount">1,899</span><span class="plan-period">&nbsp;/ 3 months</span></div>
+        <div class="plan-divider"></div>
+        <ul class="plan-features">
+          <li><span class="check">✦</span> Unlimited gym access</li>
+          <li><span class="check">✦</span> Cardio &amp; machine zone</li>
+          <li><span class="check">✦</span> 24/7 access</li>
+          <li><span class="check">✦</span> Custom meal plan</li>
+          <li><span class="check">✦</span> 3 classes/month on any 3 courses</li>
+          <li class="muted-item"><span class="check">✕</span> Personal trainer sessions</li>
+        </ul>
+      </div>
+      <div class="plan-card featured reveal" style="transition-delay:0.2s">
+        <div class="plan-badge">Popular</div>
+        <div class="plan-tier">Save up to ₹595</div>
+        <div class="plan-name">6 Month</div>
+        <div class="plan-price"><span class="plan-currency">₹</span><span class="plan-amount">3,599</span><span class="plan-period">&nbsp;/ 6 months</span></div>
+        <div class="plan-divider"></div>
+        <ul class="plan-features">
+          <li><span class="check">✦</span> Unlimited gym access</li>
+          <li><span class="check">✦</span> Cardio &amp; machine zone</li>
+          <li><span class="check">✦</span> 24/7 access</li>
+          <li><span class="check">✦</span> Custom meal plan</li>
+          <li><span class="check">✦</span> 6 classes/month on any 3 courses</li>
+          <li class="muted-item"><span class="check">✕</span> Personal trainer sessions</li>
+        </ul>
+      </div>
+      <div class="plan-card featured reveal" style="transition-delay:0.25s">
+        <div class="plan-badge">Most Popular</div>
+        <div class="plan-tier">Save up to ₹2,889</div>
+        <div class="plan-name">Yearly</div>
+        <div class="plan-price"><span class="plan-currency">₹</span><span class="plan-amount">5,499</span><span class="plan-period">&nbsp;/ year</span></div>
+        <div class="plan-divider"></div>
+        <ul class="plan-features">
+          <li><span class="check">✦</span> Unlimited gym access</li>
+          <li><span class="check">✦</span> Cardio &amp; machine zone</li>
+          <li><span class="check">✦</span> 24/7 access</li>
+          <li><span class="check">✦</span> Custom meal plan</li>
+          <li><span class="check">✦</span> 9 classes/month on any 3 courses</li>
+          <li class="muted-item"><span class="check">✕</span> Personal trainer sessions</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- COURSES -->
+<section id="store">
+  <div class="section-inner">
+    <div class="store-header">
+      <div>
+        <div class="section-label reveal">All Course List</div>
+        <h2 class="section-title reveal">View The <span style="color:var(--red)">COURSES</span></h2>
+      </div>
+    </div>
+    <div class="products-grid">
+      <div class="product-card reveal"><div class="product-img"><div class="product-tag">Most Popular</div><div class="product-img-inner"><img src="gym.png" alt="Multi Gym"/></div></div><div class="product-info"><div class="product-name">MULTI GYM</div></div></div>
+      <div class="product-card reveal" style="transition-delay:0.1s"><div class="product-img"><div class="product-tag">New</div><div class="product-img-inner"><img src="yoga.png" alt="Yoga"/></div></div><div class="product-info"><div class="product-name">Yoga</div></div></div>
+      <div class="product-card reveal" style="transition-delay:0.2s"><div class="product-img"><div class="product-tag">New</div><div class="product-img-inner"><img src="nunchaku.png" alt="Nunchaku"/></div></div><div class="product-info"><div class="product-name">Nunchaku</div></div></div>
+      <div class="product-card reveal" style="transition-delay:0.3s"><div class="product-img"><div class="product-tag">New</div><div class="product-img-inner"><img src="Martial art.png" alt="Martial Art"/></div></div><div class="product-info"><div class="product-name">Martial Art</div></div></div>
+      <div class="product-card reveal" style="transition-delay:0.35s"><div class="product-img"><div class="product-tag">New</div><div class="product-img-inner"><img src="lathi.png" alt="Lathi"/></div></div><div class="product-info"><div class="product-name">Lathi</div></div></div>
+      <div class="product-card reveal" style="transition-delay:0.4s"><div class="product-img"><div class="product-tag">New</div><div class="product-img-inner"><img src="boxing.png" alt="Boxing"/></div></div><div class="product-info"><div class="product-name">Boxing</div></div></div>
+      <div class="product-card reveal" style="transition-delay:0.45s"><div class="product-img"><div class="product-tag">New</div><div class="product-img-inner"><img src="Self Defense.png" alt="Self Defense"/></div></div><div class="product-info"><div class="product-name">Self Defense</div></div></div>
+      <div class="product-card reveal" style="transition-delay:0.5s"><div class="product-img"><div class="product-tag">New</div><div class="product-img-inner"><img src="Meditation.png" alt="Meditation"/></div></div><div class="product-info"><div class="product-name">Meditation</div></div></div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- BMI CALCULATOR -->
+<section id="bmi">
+  <div class="section-inner">
+    <div class="bmi-layout">
+      <div class="bmi-card reveal-l">
+        <div class="section-label" style="margin-bottom:8px">Health Tool</div>
+        <h2 style="font-size:2.4rem;margin-bottom:28px;">BMI Calculator</h2>
+        <div class="bmi-form">
+          <div class="input-group">
+            <div class="input-label">Gender</div>
+            <div class="unit-toggle">
+              <button class="unit-btn active" id="btn-bmi-male" onclick="setBMIGender('male')">♂ Male</button>
+              <button class="unit-btn" id="btn-bmi-female" onclick="setBMIGender('female')">♀ Female</button>
+            </div>
+          </div>
+          <div class="input-group">
+            <div class="input-label">Unit System</div>
+            <div class="unit-toggle">
+              <button class="unit-btn active" id="btn-metric" onclick="setUnit('metric')">Metric (kg/cm)</button>
+              <button class="unit-btn" id="btn-imperial" onclick="setUnit('imperial')">Imperial (lb/in)</button>
+            </div>
+          </div>
+          <div class="input-row">
+            <div class="input-group">
+              <div class="input-label" id="weight-label">Weight (kg)</div>
+              <input type="number" class="bmi-input" id="weight" placeholder="e.g. 75" min="1">
+            </div>
+            <div class="input-group">
+              <div class="input-label" id="height-label">Height (cm)</div>
+              <input type="number" class="bmi-input" id="height" placeholder="e.g. 175" min="1">
+            </div>
+          </div>
+          <div class="input-group">
+            <div class="input-label">Age (optional)</div>
+            <input type="number" class="bmi-input" id="age" placeholder="e.g. 28" min="10" max="100">
+          </div>
+          <button class="btn-primary" onclick="calculateBMI()" style="width:100%;padding:14px;">Calculate BMI</button>
+        </div>
+        <div class="bmi-result" id="bmiResult">
+          <div class="bmi-result-top">
+            <div>
+              <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.7rem;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Your BMI</div>
+              <div class="bmi-number" id="bmiValue">—</div>
+            </div>
+            <div class="bmi-status" id="bmiStatus">—</div>
+          </div>
+          <div class="bmi-bar-track"><div class="bmi-bar-fill" id="bmiBar" style="width:0%"></div></div>
+          <div class="bmi-ranges">
+            <span class="bmi-range-lbl">Under</span>
+            <span class="bmi-range-lbl">Normal</span>
+            <span class="bmi-range-lbl">Over</span>
+            <span class="bmi-range-lbl">Obese</span>
+          </div>
+          <div class="bmi-tip" id="bmiTip"></div>
+        </div>
+      </div>
+      <div class="reveal-r">
+        <div class="section-label">Know Your Numbers</div>
+        <h2 class="bmi-info-title">Your Body.<br>Your <span style="color:var(--red)">Baseline.</span></h2>
+        <p style="color:var(--muted);line-height:1.7;margin-bottom:8px;">BMI is a starting point — not the full picture. Use it alongside body fat %, strength benchmarks, and how you feel to get a true read on your fitness.</p>
+        <div class="bmi-cards">
+          <div class="bmi-mini-card"><div class="bmi-mini-icon">📉</div><div><div class="bmi-mini-label">Underweight</div><div class="bmi-mini-val">Below 18.5</div></div></div>
+          <div class="bmi-mini-card"><div class="bmi-mini-icon">✅</div><div><div class="bmi-mini-label">Healthy Range</div><div class="bmi-mini-val">18.5 – 24.9</div></div></div>
+          <div class="bmi-mini-card"><div class="bmi-mini-icon">⚠️</div><div><div class="bmi-mini-label">Overweight</div><div class="bmi-mini-val">25.0 – 29.9</div></div></div>
+          <div class="bmi-mini-card"><div class="bmi-mini-icon">🔴</div><div><div class="bmi-mini-label">Obese</div><div class="bmi-mini-val">30.0 and above</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- BMR CALCULATOR -->
+<section id="bmr">
+  <div class="section-inner">
+    <div class="bmi-layout">
+      <div class="bmi-card reveal-l">
+        <div class="section-label" style="margin-bottom:8px">Health Tool</div>
+        <h2 style="font-size:2.4rem;margin-bottom:28px;">BMR Calculator</h2>
+        <div class="bmi-form">
+          <div class="input-group">
+            <div class="input-label">Gender</div>
+            <div class="unit-toggle">
+              <button class="unit-btn active" id="btn-male" onclick="setBMRGender('male')">Male</button>
+              <button class="unit-btn" id="btn-female" onclick="setBMRGender('female')">Female</button>
+            </div>
+          </div>
+          <div class="input-group">
+            <div class="input-label">Unit System</div>
+            <div class="unit-toggle">
+              <button class="unit-btn active" id="bmr-btn-metric" onclick="setBMRUnit('metric')">Metric (kg/cm)</button>
+              <button class="unit-btn" id="bmr-btn-imperial" onclick="setBMRUnit('imperial')">Imperial (lb/in)</button>
+            </div>
+          </div>
+          <div class="input-row">
+            <div class="input-group">
+              <div class="input-label" id="bmr-weight-label">Weight (kg)</div>
+              <input type="number" class="bmi-input" id="bmr-weight" placeholder="e.g. 75" min="1">
+            </div>
+            <div class="input-group">
+              <div class="input-label" id="bmr-height-label">Height (cm)</div>
+              <input type="number" class="bmi-input" id="bmr-height" placeholder="e.g. 175" min="1">
+            </div>
+          </div>
+          <div class="input-group">
+            <div class="input-label">Age</div>
+            <input type="number" class="bmi-input" id="bmr-age" placeholder="e.g. 28" min="10" max="100">
+          </div>
+          <div class="input-group">
+            <div class="input-label">Activity Level</div>
+            <select class="bmi-input" id="bmr-activity" style="cursor:pointer;">
+              <option value="1.2">Sedentary (little or no exercise)</option>
+              <option value="1.375">Lightly Active (1–3 days/week)</option>
+              <option value="1.55" selected>Moderately Active (3–5 days/week)</option>
+              <option value="1.725">Very Active (6–7 days/week)</option>
+              <option value="1.9">Super Active (athlete / physical job)</option>
+            </select>
+          </div>
+          <button class="btn-primary" onclick="calculateBMR()" style="width:100%;padding:14px;">Calculate BMR</button>
+        </div>
+        <div class="bmi-result" id="bmrResult">
+          <div class="bmi-result-top" style="flex-direction:column;gap:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-end;">
+              <div>
+                <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.7rem;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Base Metabolic Rate</div>
+                <div class="bmi-number" id="bmrValue" style="font-size:3.2rem;">—</div>
+                <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;color:var(--muted);">calories / day at rest</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.7rem;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Daily Calorie Need</div>
+                <div style="font-family:'Bebas Neue',sans-serif;font-size:2.4rem;color:var(--gold);" id="tdeeValue">—</div>
+                <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;color:var(--muted);">calories / day (TDEE)</div>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:20px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:2px;padding:14px;text-align:center;">
+              <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.65rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#60a5fa;margin-bottom:6px;">Weight Loss</div>
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;" id="bmrLoss">—</div>
+              <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.65rem;color:var(--muted2);">cal / day</div>
+            </div>
+            <div style="background:var(--surface2);border:1px solid #4ade8033;border-radius:2px;padding:14px;text-align:center;">
+              <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.65rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#4ade80;margin-bottom:6px;">Maintain</div>
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;" id="bmrMaintain">—</div>
+              <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.65rem;color:var(--muted2);">cal / day</div>
+            </div>
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:2px;padding:14px;text-align:center;">
+              <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.65rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);margin-bottom:6px;">Muscle Gain</div>
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;" id="bmrGain">—</div>
+              <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.65rem;color:var(--muted2);">cal / day</div>
+            </div>
+          </div>
+          <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.7rem;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Daily Macro Breakdown</div>
+            <div class="macro-grid">
+              <div class="macro-card" style="border:1px solid #ef444433;">
+                <div class="macro-icon">🥩</div>
+                <div class="macro-val" id="macroProtein" style="color:#ef4444;">—</div>
+                <div class="macro-name" style="color:#ef4444;">Protein</div>
+                <div class="macro-sub">grams / day</div>
+              </div>
+              <div class="macro-card" style="border:1px solid #facc1533;">
+                <div class="macro-icon">🍚</div>
+                <div class="macro-val" id="macroCarbs" style="color:#facc15;">—</div>
+                <div class="macro-name" style="color:#facc15;">Carbohydrates</div>
+                <div class="macro-sub">grams / day</div>
+              </div>
+              <br>
+              <div class="macro-card" style="border:1px solid #4ade8033;">
+                <div class="macro-icon">🥑</div>
+                <div class="macro-val" id="macroFat" style="color:#4ade80;">—</div>
+                <div class="macro-name" style="color:#4ade80;">Fat</div>
+                <div class="macro-sub">grams / day</div>
+              </div>
+            </div>
+            <div class="macro-bar-wrap">
+              <div class="macro-bar-label">
+                <span id="proteinPct" style="color:#ef4444;">Protein —%</span>
+                <span id="carbsPct" style="color:#facc15;">Carbs —%</span>
+                <span id="fatPct" style="color:#4ade80;">Fat —%</span>
+              </div>
+              <div class="macro-bar-track">
+                <div class="macro-bar-seg" id="barProtein" style="width:0%;background:#ef4444;"></div>
+                <div class="macro-bar-seg" id="barCarbs"   style="width:0%;background:#facc15;"></div>
+                <div class="macro-bar-seg" id="barFat"     style="width:0%;background:#4ade80;"></div>
+              </div>
+            </div>
+          </div>
+          <div class="bmi-tip" id="bmrTip" style="margin-top:16px;"></div>
+        </div>
+      </div>
+      <div class="reveal-r">
+        <div class="section-label">Fuel Your Training</div>
+        <h2 class="bmi-info-title">Know Your<br><span style="color:var(--red)">Calories.</span></h2>
+        <p style="color:var(--muted);line-height:1.7;margin-bottom:8px;">BMR (Basal Metabolic Rate) is the number of calories your body burns at complete rest. Multiply it by your activity level to get your TDEE — the actual calories you need every day.</p>
+        <div class="bmi-cards">
+          <div class="bmi-mini-card"><div class="bmi-mini-icon">🛌</div><div><div class="bmi-mini-label">BMR</div><div style="font-size:0.85rem;color:var(--muted);margin-top:2px;">Calories burned doing nothing</div></div></div>
+          <div class="bmi-mini-card"><div class="bmi-mini-icon">⚡</div><div><div class="bmi-mini-label">TDEE</div><div style="font-size:0.85rem;color:var(--muted);margin-top:2px;">BMR × your activity multiplier</div></div></div>
+          <div class="bmi-mini-card"><div class="bmi-mini-icon">🥩</div><div><div class="bmi-mini-label">Protein</div><div style="font-size:0.85rem;color:var(--muted);margin-top:2px;">~2g per kg bodyweight to preserve muscle</div></div></div>
+          <div class="bmi-mini-card"><div class="bmi-mini-icon">🍚</div><div><div class="bmi-mini-label">Carbohydrates</div><div style="font-size:0.85rem;color:var(--muted);margin-top:2px;">Primary fuel for training energy</div></div></div>
+          <div class="bmi-mini-card"><div class="bmi-mini-icon">🥑</div><div><div class="bmi-mini-label">Healthy Fats</div><div style="font-size:0.85rem;color:var(--muted);margin-top:2px;">~25% of calories for hormones &amp; joints</div></div></div>
+          <div class="bmi-mini-card"><div class="bmi-mini-icon">📉</div><div><div class="bmi-mini-label">Weight Loss</div><div style="font-size:0.85rem;color:var(--muted);margin-top:2px;">TDEE minus 500 cal/day</div></div></div>
+          <div class="bmi-mini-card"><div class="bmi-mini-icon">💪</div><div><div class="bmi-mini-label">Muscle Gain</div><div style="font-size:0.85rem;color:var(--muted);margin-top:2px;">TDEE plus 300 cal/day</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- TRAINERS -->
+<section id="trainers">
+  <div class="section-inner">
+    <div class="section-label reveal">Meet The Team</div>
+    <h2 class="section-title reveal">Our Best<br><span style="color:var(--red)">Trainers</span></h2>
+    <div class="trainers-grid">
+      <div class="trainer-card reveal">
+        <div class="trainer-img" style="background:linear-gradient(135deg,#1a1a2e,#0a0a0a)">
+          <div class="trainer-avatar"><img src="Gym trainer.jpg" alt="Ranjit Dhara"/></div>
+          <div class="trainer-overlay"></div>
+          <div class="trainer-meta">
+            <div class="trainer-name">Ranjit Dhara</div>
+            <div class="trainer-spec">Gym Trainer</div>
+          </div>
+        </div>
+        <div class="trainer-info">
+          <div class="trainer-stats-row">
+            <div><div class="t-stat-num">15+</div><div class="t-stat-lbl">Years Exp.</div></div>
+            <div><div class="t-stat-num">4.9★</div><div class="t-stat-lbl">Rating</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="trainer-card reveal" style="transition-delay:0.1s">
+        <div class="trainer-img" style="background:linear-gradient(135deg,#1a0a0a,#0a0a0a)">
+          <div class="trainer-avatar"><img src="atanu.jpg" alt="Atanu Roy"></div>
+          <div class="trainer-overlay"></div>
+          <div class="trainer-meta">
+            <div class="trainer-name">Atanu Roy</div>
+            <div class="trainer-spec">Gym Trainer</div>
+          </div>
+        </div>
+        <div class="trainer-info">
+          <div class="trainer-stats-row">
+            <div><div class="t-stat-num">4+</div><div class="t-stat-lbl">Years Exp.</div></div>
+            <div><div class="t-stat-num">4.8★</div><div class="t-stat-lbl">Rating</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="trainer-card reveal" style="transition-delay:0.2s">
+        <div class="trainer-img" style="background:linear-gradient(135deg,#0a1a0a,#0a0a0a)">
+          <div class="trainer-avatar">🧔</div>
+          <div class="trainer-overlay"></div>
+          <div class="trainer-meta">
+            <div class="trainer-name">Ankita Manna</div>
+            <div class="trainer-spec">Meditation · Yoga</div>
+          </div>
+        </div>
+        <div class="trainer-info">
+          <div class="trainer-stats-row">
+            <div><div class="t-stat-num">12+</div><div class="t-stat-lbl">Years Exp.</div></div>
+            <div><div class="t-stat-num">4.9★</div><div class="t-stat-lbl">Rating</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- LOCATION -->
+<section id="location">
+  <div class="section-inner">
+    <div class="section-label reveal">Find Us</div>
+    <h2 class="section-title reveal">MAHAKAL GYM AND FITNESS STUDIO<br><span style="color:var(--red)">Location</span></h2>
+    <div style="margin-top:48px;display:flex;justify-content:center;">
+      <div class="map-card reveal">
+        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3686.1!2d87.9785015!3d22.7164802!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39f871004bef8529%3A0xa9e214c0edd9aaf2!2sMahakal%20Gym%20And%20fitness%20Studio!5e0!3m2!1sen!2sin!4v1" allowfullscreen="" loading="eager" referrerpolicy="no-referrer-when-downgrade" title="Mahakal Gym And Fitness Studio Map"></iframe>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- EVENTS MAIN -->
+<section id="events">
+  <div class="section-inner">
+    <div class="section-label reveal">Events</div>
+    <h2 class="section-title reveal">2nd Inter Gym<br><span style="color:var(--red)">Championship 2026</span></h2>
+    <div class="container" style="margin-top:48px;">
+      <div class="slider-wrapper">
+        <div class="slider" id="mainSlider">
+          <img src="Championship1.jpg" class="active" alt="Championship 1">
+          <img src="Championship2.jpg" alt="Championship 2">
+          <img src="Championship3.jpg" alt="Championship 3">
+        </div>
+        <div class="slider-nav" id="sliderNav">
+          <button class="active" data-index="0" aria-label="Slide 1"></button>
+          <button data-index="1" aria-label="Slide 2"></button>
+          <button data-index="2" aria-label="Slide 3"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div>
+        <div class="footer-logo">MAHAKAL GYM AND <span>FITNESS STUDIO</span></div>
+        <p class="footer-desc">Premium training facilities, expert coaching, and elite supplements — all under one roof. Mahakal Gym And Fitness Studio since 2024.</p>
+      </div>
+      <div>
+        <div class="footer-col-title">Explore</div>
+        <ul class="footer-links">
+          <li><a href="#memberships">Membership Plans</a></li>
+          <li><a href="#store">Courses</a></li>
+          <li><a href="#trainers">Our Trainers</a></li>
+          <li><a href="#bmi">BMI Calculator</a></li>
+          <li><a href="#bmr">BMR Calculator</a></li>
+          <li><a href="#location">Location</a></li>
+          <li><a href="#events">Events</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Contact Us</div>
+        <ul class="footer-links">
+          <li><a href="https://maps.app.goo.gl/hX3LC9vCuxfoXqSR8">GYM Location</a></li>
+          <li><a href="tel:+919609832596">+91 9609832596</a></li>
+          <li><a href="mailto:mahakalgymandfitnessstudio8@gmail.com">mahakalgymandfitnessstudio8@gmail.com</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">Mahakal Gym And Fitness Studio</div>
+      <div class="footer-socials">
+        <a class="social-btn" href="https://www.instagram.com/mahakal_gym_1?igsh=ejVyZ3RleWh4Y2Y4" title="Instagram" target="_blank" rel="noopener"><i class="fa-brands fa-square-instagram"></i></a>
+        <a class="social-btn" href="https://www.facebook.com/share/1EAEfZFPGP/" title="Facebook" target="_blank" rel="noopener"><i class="fa-brands fa-facebook"></i></a>
+        <a class="social-btn" href="#" title="YouTube"><i class="fa-brands fa-youtube"></i></a>
+        <a class="social-btn" href="#" title="Twitter/X"><i class="fa-brands fa-x-twitter"></i></a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   PAGE ENTER TRANSITION
+═══════════════════════════════════════════════════════════ */
+window.addEventListener('load', () => {
+  const el = document.getElementById('pageEnter');
+  if (el) setTimeout(() => el.remove(), 900);
+});
+
+/* ═══════════════════════════════════════════════════════════
+   CUSTOM CURSOR
+═══════════════════════════════════════════════════════════ */
+
+
+
+/* ═══════════════════════════════════════════════════════════
+   PARTICLE CANVAS
+═══════════════════════════════════════════════════════════ */
+(function() {
+  const canvas = document.getElementById('particle-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W, H, particles = [];
+
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const COUNT = Math.min(80, Math.floor(window.innerWidth / 20));
+  for (let i = 0; i < COUNT; i++) {
+    particles.push({
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      r: Math.random() * 1.5 + 0.3,
+      dx: (Math.random() - 0.5) * 0.35,
+      dy: (Math.random() - 0.5) * 0.35,
+      opacity: Math.random() * 0.5 + 0.1,
+      color: Math.random() > 0.75 ? '#E50914' : '#ffffff'
+    });
+  }
+
+  function drawParticles() {
+    ctx.clearRect(0, 0, W, H);
+    // Draw lines between nearby particles
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < 140) {
+          ctx.beginPath();
+          ctx.strokeStyle = `rgba(229,9,20,${0.06 * (1 - dist/140)})`;
+          ctx.lineWidth = 0.5;
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+    // Draw dots
+    particles.forEach(p => {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fillStyle = p.color === '#E50914'
+        ? `rgba(229,9,20,${p.opacity})`
+        : `rgba(255,255,255,${p.opacity * 0.5})`;
+      ctx.fill();
+      p.x += p.dx; p.y += p.dy;
+      if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+    });
+    requestAnimationFrame(drawParticles);
+  }
+  drawParticles();
+})();
+
+/* ═══════════════════════════════════════════════════════════
+   SCROLL REVEAL
+═══════════════════════════════════════════════════════════ */
+const revealEls = document.querySelectorAll('.reveal,.reveal-l,.reveal-r');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+revealEls.forEach(el => observer.observe(el));
+
+/* ═══════════════════════════════════════════════════════════
+   COUNTER ANIMATION
+═══════════════════════════════════════════════════════════ */
+function animateCounter(el) {
+  const target  = parseFloat(el.dataset.target);
+  const suffix  = el.dataset.suffix || '';
+  const decimal = parseInt(el.dataset.decimal || '0');
+  const duration = 2000;
+  const start = performance.now();
+  function update(now) {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    // Ease out cubic
+    const ease = 1 - Math.pow(1 - progress, 3);
+    const value = target * ease;
+    el.textContent = (decimal ? value.toFixed(decimal) : Math.floor(value)) + suffix;
+    if (progress < 1) requestAnimationFrame(update);
+    else el.style.animation = 'counter-pop 0.4s ease';
+  }
+  requestAnimationFrame(update);
+}
+const counterObs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting && e.target.dataset.target) {
+      animateCounter(e.target);
+      counterObs.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.5 });
+document.querySelectorAll('[data-target]').forEach(el => counterObs.observe(el));
+
+/* ═══════════════════════════════════════════════════════════
+   NAV SCROLL
+═══════════════════════════════════════════════════════════ */
+const mainNav = document.getElementById('mainNav');
+window.addEventListener('scroll', () => {
+  mainNav && mainNav.classList.toggle('scrolled', window.scrollY > 50);
+  let current = '';
+  document.querySelectorAll('section[id]').forEach(s => {
+    if (window.scrollY >= s.offsetTop - 100) current = s.id;
+  });
+  document.querySelectorAll('.nav-links a').forEach(a => {
+    a.style.color = a.getAttribute('href') === `#${current}` ? 'white' : '';
+  });
+}, { passive: true });
+
+/* ═══════════════════════════════════════════════════════════
+   HAMBURGER
+═══════════════════════════════════════════════════════════ */
+function toggleMenu() {
+  document.querySelector('.nav-links').classList.toggle('open');
+}
+document.querySelectorAll('.nav-links a').forEach(a => {
+  a.addEventListener('click', () => document.querySelector('.nav-links').classList.remove('open'));
+});
+
+/* ═══════════════════════════════════════════════════════════
+   MAGNETIC BUTTON
+═══════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════
+   PARALLAX HERO
+═══════════════════════════════════════════════════════════ */
+const heroBg = document.querySelector('.hero-bg-img');
+window.addEventListener('scroll', () => {
+  if (heroBg && window.scrollY < window.innerHeight * 1.2) {
+    heroBg.style.transform = `scale(1.08) translateY(${window.scrollY * 0.25}px)`;
+  }
+}, { passive: true });
+
+/* ═══════════════════════════════════════════════════════════
+   TILT ON PLAN CARDS
+═══════════════════════════════════════════════════════════ */
+document.querySelectorAll('.plan-card').forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const r = card.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width  - 0.5;
+    const y = (e.clientY - r.top)  / r.height - 0.5;
+    card.style.transform = `translateY(-8px) rotateX(${-y*6}deg) rotateY(${x*6}deg)`;
+    card.style.transition = 'transform 0.1s';
+  });
+  card.addEventListener('mouseleave', () => {
+    card.style.transform = '';
+    card.style.transition = 'transform 0.4s cubic-bezier(0.23,1,0.32,1)';
+  });
+});
+
+/* ═══════════════════════════════════════════════════════════
+   BMI CALCULATOR
+═══════════════════════════════════════════════════════════ */
+let unit = 'metric', bmiGender = 'male';
+function setUnit(u) {
+  unit = u;
+  document.getElementById('btn-metric').classList.toggle('active',u==='metric');
+  document.getElementById('btn-imperial').classList.toggle('active',u==='imperial');
+  document.getElementById('weight-label').textContent = u==='metric'?'Weight (kg)':'Weight (lb)';
+  document.getElementById('height-label').textContent = u==='metric'?'Height (cm)':'Height (in)';
+  document.getElementById('weight').placeholder = u==='metric'?'e.g. 75':'e.g. 165';
+  document.getElementById('height').placeholder = u==='metric'?'e.g. 175':'e.g. 69';
+  const r = document.getElementById('bmiResult'); r.classList.remove('visible'); r.style.display='none';
+}
+function setBMIGender(g) {
+  bmiGender = g;
+  document.getElementById('btn-bmi-male').classList.toggle('active',g==='male');
+  document.getElementById('btn-bmi-female').classList.toggle('active',g==='female');
+  const r = document.getElementById('bmiResult'); r.classList.remove('visible'); r.style.display='none';
+}
+function calculateBMI() {
+  const weight = parseFloat(document.getElementById('weight').value);
+  const height = parseFloat(document.getElementById('height').value);
+  if (!weight||!height||weight<=0||height<=0) return;
+  let bmi;
+  if (unit==='imperial') { bmi=(703*weight)/(height*height); }
+  else { const hm=height/100; bmi=weight/(hm*hm); }
+  bmi = Math.round(bmi*10)/10;
+  const result = document.getElementById('bmiResult');
+  result.style.display='block'; setTimeout(()=>result.classList.add('visible'),10);
+  document.getElementById('bmiValue').textContent = bmi.toFixed(1);
+  const statusEl=document.getElementById('bmiStatus'),barEl=document.getElementById('bmiBar'),tipEl=document.getElementById('bmiTip');
+  const ranges = bmiGender==='female'?{underweight:18.5,overweight:24.0,obese:29.0}:{underweight:18.5,overweight:25.0,obese:30.0};
+  let status,color,barW,tip;
+  if (bmi<ranges.underweight) {
+    status='Underweight';color='#60a5fa';barW=Math.max(5,(bmi/40)*100);
+    tip=bmiGender==='male'?'<strong>For Men:</strong> Focus on a caloric surplus with high-protein foods like chicken, eggs, and whey.':'<strong>For Women:</strong> Focus on nutrient-dense foods — nuts, dairy, legumes, and lean proteins.';
+  } else if (bmi<ranges.overweight) {
+    status='Healthy';color='#4ade80';barW=(bmi/40)*100;
+    tip=bmiGender==='male'?'<strong>Great shape!</strong> Maintain with 3–5 gym sessions/week.':'<strong>Great shape!</strong> Maintain with 3–4 balanced workouts/week.';
+  } else if (bmi<ranges.obese) {
+    status='Overweight';color='#facc15';barW=(bmi/40)*100;
+    tip=bmiGender==='male'?'<strong>For Men:</strong> A calorie deficit of 400–500 kcal/day combined with strength training.':'<strong>For Women:</strong> A moderate calorie deficit with resistance training.';
+  } else {
+    status='Obese';color='#ef4444';barW=Math.min(98,(bmi/40)*100);
+    tip='<strong>We can help.</strong> Our coaches specialise in judgment-free step-by-step programs. <strong>Book a free consultation.</strong>';
+  }
+  statusEl.textContent=status;
+  statusEl.style.background=color+'22'; statusEl.style.color=color; statusEl.style.border=`1px solid ${color}44`;
+  barEl.style.background=color; barEl.style.boxShadow=`0 0 10px ${color}66`;
+  setTimeout(()=>{ barEl.style.width=Math.min(98,barW)+'%'; },50);
+  tipEl.innerHTML=tip;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   BMR CALCULATOR
+═══════════════════════════════════════════════════════════ */
+let bmrUnit='metric', bmrGender='male';
+function setBMRGender(g) { bmrGender=g; document.getElementById('btn-male').classList.toggle('active',g==='male'); document.getElementById('btn-female').classList.toggle('active',g==='female'); resetBMRResult(); }
+function setBMRUnit(u) { bmrUnit=u; document.getElementById('bmr-btn-metric').classList.toggle('active',u==='metric'); document.getElementById('bmr-btn-imperial').classList.toggle('active',u==='imperial'); document.getElementById('bmr-weight-label').textContent=u==='metric'?'Weight (kg)':'Weight (lb)'; document.getElementById('bmr-height-label').textContent=u==='metric'?'Height (cm)':'Height (in)'; document.getElementById('bmr-weight').placeholder=u==='metric'?'e.g. 75':'e.g. 165'; document.getElementById('bmr-height').placeholder=u==='metric'?'e.g. 175':'e.g. 69'; resetBMRResult(); }
+function resetBMRResult() { const r=document.getElementById('bmrResult'); r.classList.remove('visible'); r.style.display='none'; }
+function calculateBMR() {
+  let weight=parseFloat(document.getElementById('bmr-weight').value);
+  let height=parseFloat(document.getElementById('bmr-height').value);
+  const age=parseFloat(document.getElementById('bmr-age').value);
+  const activity=parseFloat(document.getElementById('bmr-activity').value);
+  if (!weight||!height||!age||weight<=0||height<=0||age<=0) return;
+  if (bmrUnit==='imperial') { weight=weight*0.453592; height=height*2.54; }
+  let bmr=(10*weight)+(6.25*height)-(5*age)+(bmrGender==='male'?5:-161);
+  const tdee=Math.round(bmr*activity);
+  bmr=Math.round(bmr);
+  const loss=tdee-500, gain=tdee+300;
+  const proteinG=Math.round(weight*2.0), fatG=Math.round((tdee*0.25)/9);
+  const carbsG=Math.max(0,Math.round((tdee-(proteinG*4)-(fatG*9))/4));
+  const totalCals=(proteinG*4)+(carbsG*4)+(fatG*9);
+  const proteinPct=Math.round((proteinG*4/totalCals)*100), carbsPct=Math.round((carbsG*4/totalCals)*100), fatPct=100-proteinPct-carbsPct;
+  const result=document.getElementById('bmrResult'); result.style.display='block'; setTimeout(()=>result.classList.add('visible'),10);
+  document.getElementById('bmrValue').textContent=bmr.toLocaleString();
+  document.getElementById('tdeeValue').textContent=tdee.toLocaleString();
+  document.getElementById('bmrLoss').textContent=loss.toLocaleString();
+  document.getElementById('bmrMaintain').textContent=tdee.toLocaleString();
+  document.getElementById('bmrGain').textContent=gain.toLocaleString();
+  document.getElementById('macroProtein').textContent=proteinG+'g';
+  document.getElementById('macroCarbs').textContent=carbsG+'g';
+  document.getElementById('macroFat').textContent=fatG+'g';
+  document.getElementById('proteinPct').textContent=`Protein ${proteinPct}%`;
+  document.getElementById('carbsPct').textContent=`Carbs ${carbsPct}%`;
+  document.getElementById('fatPct').textContent=`Fat ${fatPct}%`;
+  setTimeout(()=>{ document.getElementById('barProtein').style.width=proteinPct+'%'; document.getElementById('barCarbs').style.width=carbsPct+'%'; document.getElementById('barFat').style.width=fatPct+'%'; },80);
+  document.getElementById('bmrTip').innerHTML = bmrGender==='male'
+    ? `<strong>Your BMR is ${bmr.toLocaleString()} kcal/day.</strong> To maintain, eat around <strong>${tdee.toLocaleString()} kcal</strong>. Hit <strong>${proteinG}g protein</strong> daily.`
+    : `<strong>Your BMR is ${bmr.toLocaleString()} kcal/day.</strong> To maintain, eat around <strong>${tdee.toLocaleString()} kcal</strong>. Aim for <strong>${proteinG}g protein</strong> daily.`;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SLIDERS
+═══════════════════════════════════════════════════════════ */
+function initSlider(sliderId, navId) {
+  const slides = document.querySelectorAll('#'+sliderId+' img');
+  const dots   = document.querySelectorAll('#'+navId+' button');
+  if (!slides.length||!dots.length) return;
+  let current=0, timer;
+  function goTo(n) {
+    slides[current].classList.remove('active'); dots[current].classList.remove('active');
+    current=(n+slides.length)%slides.length;
+    slides[current].classList.add('active'); dots[current].classList.add('active');
+  }
+  function startAuto() { timer=setInterval(()=>goTo(current+1),3500); }
+  function stopAuto()  { clearInterval(timer); }
+  dots.forEach(dot => { dot.addEventListener('click',()=>{ stopAuto(); goTo(parseInt(dot.dataset.index)); startAuto(); }); });
+  startAuto();
+}
+initSlider('featuredSlider','featuredSliderNav');
+initSlider('mainSlider','sliderNav');
+</script>
+</body>
+</html>
