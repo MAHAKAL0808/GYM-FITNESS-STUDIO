@@ -498,6 +498,16 @@
     transition:transform 0.6s ease; border-radius:2px;
   }
   .section-title .red-word.visible::after { transform:scaleX(1); }
+ /* ─── TESTIMONIALS ─── */
+  #testimonials { background:var(--bg); padding:100px 40px; }
+  .testimonials-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:2px; margin-top:60px; }
+  .testimonial-card { background:var(--surface); padding:36px; position:relative; }
+  .testimonial-quote { font-size:3rem; font-family:'Bebas Neue',sans-serif; color:var(--red); opacity:0.3; line-height:1; margin-bottom:16px; }
+  .testimonial-text { font-size:0.9rem; color:var(--muted); line-height:1.7; margin-bottom:24px; }
+  .testimonial-author { display:flex; align-items:center; gap:14px; padding-top:20px; border-top:1px solid var(--border); }
+  .author-avatar { width:44px; height:44px; border-radius:50%; background:var(--surface2); display:flex; align-items:center; justify-content:center; font-size:1.4rem; }
+  .author-name { font-family:'Barlow Condensed',sans-serif; font-size:0.9rem; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; }
+  .stars { color:var(--gold); font-size:0.7rem; margin-bottom:2px; letter-spacing:2px; }
 </style>
 </head>
 <body>
@@ -521,6 +531,7 @@
       <li><a href="#memberships">Gym Plans</a></li>
       <li><a href="#store">Courses</a></li>
       <li><a href="#trainers">Trainers</a></li>
+     <li><a href="#testimonials">Reviews</a></li>
       <li><a href="#bmi">BMI Calculator</a></li>
       <li><a href="#bmr">BMR Calculator</a></li>
       <li><a href="#location">Location</a></li>
@@ -1043,7 +1054,7 @@
       </div>
       <div class="trainer-card reveal" style="transition-delay:0.2s">
         <div class="trainer-img" style="background:linear-gradient(135deg,#0a1a0a,#0a0a0a)">
-          <div class="trainer-avatar">🧔</div>
+          <div class="trainer-avatar"></div>
           <div class="trainer-overlay"></div>
           <div class="trainer-meta">
             <div class="trainer-name">Ankita Manna</div>
@@ -1075,7 +1086,52 @@
     </div>
   </div>
 </section>
+<!-- ─── TESTIMONIALS ─── -->
+<section id="testimonials">
+  <div class="section-inner">
+    <div class="section-label reveal">Member Stories</div>
+    <h2 class="section-title reveal">Results That<br><span style="color:var(--red)">Speak</span></h2>
+    <div class="testimonials-grid">
+      <div class="testimonial-card reveal">
+        <div class="testimonial-quote">"</div>
+        <div class="stars">★★★★★</div>
+        <p class="testimonial-text">Mahakal Gym & Fitness Studio is truly the best place for fitness lovers! The environment here is very positive and motivating. The gym is well-equipped with all modern machines and provides a clean, comfortable space to work out.
 
+What makes this gym really special are Sir and Ma’am – they are extremely supportive, knowledgeable, and friendly. They guide each member personally, whether it’s about workouts, diet, or overall lifestyle. Their encouragement makes every session enjoyable and pushes you to give your best.
+
+If you are looking for a gym where you not only improve your fitness but also feel like part of a family, Mahakal Gym & Fitness Studio is the perfect choice. Highly recommended!</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">💪</div>
+          <div>
+            <div class="author-name">Soumya Guchait</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card reveal" style="transition-delay:0.1s">
+        <div class="testimonial-quote">"</div>
+        <div class="stars">★★★★★</div>
+        <p class="testimonial-text">Having frequented this gymnasium for the past several months, I have observed remarkable transformations in both my physical and emotional well-being. The facility boasts superlative infrastructure, surpassing comparable local establishments in its design and amenities. I would strongly recommend considering membership at this gym, not only for its exceptional standards of hygiene, which are meticulously maintained, but also for its comprehensive approach to personal development. For individuals seeking to cultivate their physical fitness and emotional resilience through structured training within a hygienic, well-equipped environment, this establishment represents the most advantageous option presently available in the vicinity.</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">🏃</div>
+          <div>
+            <div class="author-name">Rudranil Jana</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card reveal" style="transition-delay:0.2s">
+        <div class="testimonial-quote">"</div>
+        <div class="stars">★★★★★</div>
+        <p class="testimonial-text">Mahakal Gym Studio offers a top-notch fitness experience with modern equipment, expert trainers, and a clean, motivating environment. Their personalized workout plans and affordable memberships make it a great choice for all fitness enthusiasts.</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">️🏋‍♂️</div>
+          <div>
+            <div class="author-name">Tamajit Bairi</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 <div class="section-divider"></div>
 
 <!-- EVENTS MAIN -->
