@@ -16,9 +16,11 @@
     --red-dim:rgba(229,9,20,0.15); --red-glow:rgba(229,9,20,0.35);
     --gold:#C8A96E; --text:#FFFFFF; --muted:#888888; --muted2:#555555;
   }
-  html { scroll-behavior: smooth; }
-  body { background:var(--bg); color:var(--text); font-family:'Barlow',sans-serif; font-weight:300; overflow-x:hidden; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust:100%; }
+  body { background:var(--bg); color:var(--text); font-family:'Barlow',sans-serif; font-weight:300; overflow-x:hidden; -webkit-tap-highlight-color:transparent; }
   .container { padding:2rem; }
+  a, button, .plan-card, .product-card, .trainer-card, .slider-nav button, .hamburger { touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+  input, select, textarea { font-size:16px; }
 
   /* ═══════════════════════════════════════════
      CUSTOM CURSOR
@@ -257,7 +259,7 @@
      SLIDER
   ═══════════════════════════════════════════ */
   .slider-wrapper { position:relative; max-width:48rem; margin:0 auto; }
-  .slider { position:relative; aspect-ratio:16/9; border-radius:0.5rem; box-shadow:0 1.5rem 3rem -0.75rem hsla(0,0%,0%,0.25); overflow:hidden; }
+  .slider { position:relative; aspect-ratio:16/9; border-radius:0.5rem; box-shadow:0 1.5rem 3rem -0.75rem hsla(0,0%,0%,0.25); overflow:hidden; touch-action:pan-y; }
   .slider::before {
     content:''; position:absolute; inset:0; z-index:2; pointer-events:none;
     box-shadow: inset 0 0 80px rgba(229,9,20,0.12);
@@ -265,7 +267,8 @@
   .slider img { position:absolute; inset:0; width:100%; height:100%; opacity:0; transition:opacity 0.9s cubic-bezier(0.4,0,0.2,1), transform 0.9s cubic-bezier(0.4,0,0.2,1); pointer-events:none; transform:scale(1.04); }
   .slider img.active { opacity:1; transform:scale(1); }
   .slider-nav { display:flex; column-gap:1rem; position:absolute; bottom:1.25rem; left:50%; transform:translateX(-50%); z-index:3; }
-  .slider-nav button { width:0.5rem; height:0.5rem; border-radius:50%; background-color:#fff; opacity:0.75; border:none; cursor:pointer; transition:opacity 250ms, transform 250ms, background 250ms; padding:0; }
+  .slider-nav button { width:0.5rem; height:0.5rem; border-radius:50%; background-color:#fff; opacity:0.75; border:none; cursor:pointer; transition:opacity 250ms, transform 250ms, background 250ms; padding:0; position:relative; }
+  .slider-nav button::before { content:''; position:absolute; inset:-12px; }
   .slider-nav button:hover { opacity:1; }
   .slider-nav button.active { opacity:1; transform:scale(1.4); background:var(--red); }
 
@@ -472,6 +475,7 @@
     .store-header{flex-direction:column;align-items:flex-start;gap:16px}
     .macro-grid{grid-template-columns:1fr 1fr 1fr}
     .bmi-card{padding:28px}
+    #testimonials{padding:80px 20px}
   }
 
   /* ═══════════════════════════════════════════
@@ -500,14 +504,41 @@
   .section-title .red-word.visible::after { transform:scaleX(1); }
  /* ─── TESTIMONIALS ─── */
   #testimonials { background:var(--bg); padding:100px 40px; }
-  .testimonials-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:2px; margin-top:60px; }
-  .testimonial-card { background:var(--surface); padding:36px; position:relative; }
+  .testimonial-slider-wrapper { position:relative; max-width:760px; margin:60px auto 0; touch-action:pan-y; }
+  .testimonial-slider { position:relative; transition:height 0.45s cubic-bezier(0.4,0,0.2,1); }
+  .testimonial-card {
+    background:var(--surface); border:1px solid var(--border); padding:40px 44px 32px;
+    position:absolute; top:0; left:0; width:100%; min-width:0; overflow-wrap:break-word;
+    opacity:0; pointer-events:none; transform:translateY(14px);
+    transition:opacity 0.5s ease, transform 0.5s ease;
+  }
+  .testimonial-card.active { opacity:1; pointer-events:auto; transform:translateY(0); }
   .testimonial-quote { font-size:3rem; font-family:'Bebas Neue',sans-serif; color:var(--red); opacity:0.3; line-height:1; margin-bottom:16px; }
-  .testimonial-text { font-size:0.9rem; color:var(--muted); line-height:1.7; margin-bottom:24px; }
+  .testimonial-text { font-size:0.9rem; color:var(--muted); line-height:1.7; margin-bottom:24px; overflow-wrap:break-word; word-break:break-word; }
   .testimonial-author { display:flex; align-items:center; gap:14px; padding-top:20px; border-top:1px solid var(--border); }
   .author-avatar { width:44px; height:44px; border-radius:50%; background:var(--surface2); display:flex; align-items:center; justify-content:center; font-size:1.4rem; }
   .author-name { font-family:'Barlow Condensed',sans-serif; font-size:0.9rem; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; }
   .stars { color:var(--gold); font-size:0.7rem; margin-bottom:2px; letter-spacing:2px; }
+  .testimonial-slider-nav { display:flex; justify-content:center; align-items:center; column-gap:1rem; margin-top:28px; }
+  .testimonial-slider-nav button { width:0.5rem; height:0.5rem; border-radius:50%; background-color:#fff; opacity:0.35; border:none; cursor:pointer; transition:opacity 250ms, transform 250ms, background 250ms; padding:0; position:relative; }
+  .testimonial-slider-nav button::before { content:''; position:absolute; inset:-12px; }
+  .testimonial-slider-nav button:hover { opacity:0.7; }
+  .testimonial-slider-nav button.active { opacity:1; transform:scale(1.4); background:var(--red); }
+  .testimonial-arrow {
+    position:absolute; top:50%; transform:translateY(-50%); z-index:4;
+    width:40px; height:40px; border-radius:50%; border:1px solid var(--border);
+    background:rgba(17,17,17,0.85); color:var(--text); display:flex; align-items:center; justify-content:center;
+    cursor:pointer; font-size:0.85rem; transition:background 0.25s, border-color 0.25s, color 0.25s;
+  }
+  .testimonial-arrow:hover { background:var(--red); border-color:var(--red); color:#fff; }
+  .testimonial-arrow.prev { left:-20px; }
+  .testimonial-arrow.next { right:-20px; }
+  @media(max-width:900px){
+    .testimonial-arrow { display:none; }
+  }
+  @media(max-width:768px){
+    .testimonial-card { padding:32px 24px 28px; }
+  }
 </style>
 </head>
 <body>
@@ -1036,7 +1067,7 @@
           </div>
         </div>
       </div>
-      <div class="trainer-card reveal" style="transition-delay:0.1s">
+      <!-- <div class="trainer-card reveal" style="transition-delay:0.1s">
         <div class="trainer-img" style="background:linear-gradient(135deg,#1a0a0a,#0a0a0a)">
           <div class="trainer-avatar"><img src="atanu.jpg" alt="Atanu Roy"></div>
           <div class="trainer-overlay"></div>
@@ -1051,7 +1082,7 @@
             <div><div class="t-stat-num">4.8★</div><div class="t-stat-lbl">Rating</div></div>
           </div>
         </div>
-      </div>
+      </div> -->
       <div class="trainer-card reveal" style="transition-delay:0.2s">
         <div class="trainer-img" style="background:linear-gradient(135deg,#0a1a0a,#0a0a0a)">
           <div class="trainer-avatar"></div>
@@ -1091,43 +1122,48 @@
   <div class="section-inner">
     <div class="section-label reveal">Member Stories</div>
     <h2 class="section-title reveal">Results That<br><span style="color:var(--red)">Speak</span></h2>
-    <div class="testimonials-grid">
-      <div class="testimonial-card reveal">
-        <div class="testimonial-quote">"</div>
-        <div class="stars">★★★★★</div>
-        <p class="testimonial-text">Mahakal Gym & Fitness Studio is truly the best place for fitness lovers! The environment here is very positive and motivating. The gym is well-equipped with all modern machines and provides a clean, comfortable space to work out.
-
-What makes this gym really special are Sir and Ma’am – they are extremely supportive, knowledgeable, and friendly. They guide each member personally, whether it’s about workouts, diet, or overall lifestyle. Their encouragement makes every session enjoyable and pushes you to give your best.
-
-If you are looking for a gym where you not only improve your fitness but also feel like part of a family, Mahakal Gym & Fitness Studio is the perfect choice. Highly recommended!</p>
-        <div class="testimonial-author">
-          <div class="author-avatar">💪</div>
-          <div>
-            <div class="author-name">Soumya Guchait</div>
+    <div class="testimonial-slider-wrapper reveal">
+      <button class="testimonial-arrow prev" id="testimonialPrev" aria-label="Previous testimonial"><i class="fa-solid fa-chevron-left"></i></button>
+      <button class="testimonial-arrow next" id="testimonialNext" aria-label="Next testimonial"><i class="fa-solid fa-chevron-right"></i></button>
+      <div class="testimonial-slider" id="testimonialSlider">
+        <div class="testimonial-card active">
+          <div class="testimonial-quote">"</div>
+          <div class="stars">★★★★★</div>
+          <p class="testimonial-text">Mahakal Gym & Fitness Studio is truly the best place for fitness lovers! The environment here is very positive and motivating. The gym is well-equipped with all modern machines and provides a clean, comfortable space to work out.<br><br>What makes this gym really special are Sir and Ma'am – they are extremely supportive, knowledgeable, and friendly. They guide each member personally, whether it's about workouts, diet, or overall lifestyle. Their encouragement makes every session enjoyable and pushes you to give your best.<br><br>If you are looking for a gym where you not only improve your fitness but also feel like part of a family, Mahakal Gym & Fitness Studio is the perfect choice. Highly recommended!</p>
+          <div class="testimonial-author">
+            <div class="author-avatar">💪</div>
+            <div>
+              <div class="author-name">Soumya Guchait</div>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card">
+          <div class="testimonial-quote">"</div>
+          <div class="stars">★★★★★</div>
+          <p class="testimonial-text">Having frequented this gymnasium for the past several months, I have observed remarkable transformations in both my physical and emotional well-being. The facility boasts superlative infrastructure, surpassing comparable local establishments in its design and amenities. I would strongly recommend considering membership at this gym, not only for its exceptional standards of hygiene, which are meticulously maintained, but also for its comprehensive approach to personal development. For individuals seeking to cultivate their physical fitness and emotional resilience through structured training within a hygienic, well-equipped environment, this establishment represents the most advantageous option presently available in the vicinity.</p>
+          <div class="testimonial-author">
+            <div class="author-avatar">🏃</div>
+            <div>
+              <div class="author-name">Rudranil Jana</div>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card">
+          <div class="testimonial-quote">"</div>
+          <div class="stars">★★★★★</div>
+          <p class="testimonial-text">Mahakal Gym Studio offers a top-notch fitness experience with modern equipment, expert trainers, and a clean, motivating environment. Their personalized workout plans and affordable memberships make it a great choice for all fitness enthusiasts.</p>
+          <div class="testimonial-author">
+            <div class="author-avatar">🏋‍♂️</div>
+            <div>
+              <div class="author-name">Tamajit Bairi</div>
+            </div>
           </div>
         </div>
       </div>
-      <div class="testimonial-card reveal" style="transition-delay:0.1s">
-        <div class="testimonial-quote">"</div>
-        <div class="stars">★★★★★</div>
-        <p class="testimonial-text">Having frequented this gymnasium for the past several months, I have observed remarkable transformations in both my physical and emotional well-being. The facility boasts superlative infrastructure, surpassing comparable local establishments in its design and amenities. I would strongly recommend considering membership at this gym, not only for its exceptional standards of hygiene, which are meticulously maintained, but also for its comprehensive approach to personal development. For individuals seeking to cultivate their physical fitness and emotional resilience through structured training within a hygienic, well-equipped environment, this establishment represents the most advantageous option presently available in the vicinity.</p>
-        <div class="testimonial-author">
-          <div class="author-avatar">🏃</div>
-          <div>
-            <div class="author-name">Rudranil Jana</div>
-          </div>
-        </div>
-      </div>
-      <div class="testimonial-card reveal" style="transition-delay:0.2s">
-        <div class="testimonial-quote">"</div>
-        <div class="stars">★★★★★</div>
-        <p class="testimonial-text">Mahakal Gym Studio offers a top-notch fitness experience with modern equipment, expert trainers, and a clean, motivating environment. Their personalized workout plans and affordable memberships make it a great choice for all fitness enthusiasts.</p>
-        <div class="testimonial-author">
-          <div class="author-avatar">️🏋‍♂️</div>
-          <div>
-            <div class="author-name">Tamajit Bairi</div>
-          </div>
-        </div>
+      <div class="testimonial-slider-nav" id="testimonialSliderNav">
+        <button class="active" data-index="0" aria-label="Testimonial 1"></button>
+        <button data-index="1" aria-label="Testimonial 2"></button>
+        <button data-index="2" aria-label="Testimonial 3"></button>
       </div>
     </div>
   </div>
@@ -1138,20 +1174,20 @@ If you are looking for a gym where you not only improve your fitness but also fe
 <section id="events">
   <div class="section-inner">
     <div class="section-label reveal">Events</div>
-    <h2 class="section-title reveal">2nd Inter Gym<br><span style="color:var(--red)">Championship 2026</span></h2>
+    <h2 class="section-title reveal">advertisement<br><span style="color:var(--red)">for Trainers</span></h2>
     <div class="container" style="margin-top:48px;">
       <div class="slider-wrapper">
         <div class="slider" id="mainSlider">
-          <img src="Championship1.jpg" class="active" alt="Championship 1">
-          <img src="Championship2.jpg" alt="Championship 2">
-          <img src="Championship3.jpg" alt="Championship 3">
+          <!-- <img src="Championship1.jpg" class="active" alt="Championship 1"> -->
+          <!-- <img src="Championship2.jpg" alt="Championship 2"> -->
+          <!-- <img src="Championship3.jpg" alt="Championship 3"> -->
            <img src="Trainer.jpg" alt="Trainer">
             <img src="Trainer2.jpeg" alt="Trainer2">
         </div>
         <div class="slider-nav" id="sliderNav">
-          <button class="active" data-index="0" aria-label="Slide 1"></button>
-          <button data-index="1" aria-label="Slide 2"></button>
-          <button data-index="2" aria-label="Slide 3"></button>
+          <!-- <button class="active" data-index="0" aria-label="Slide 1"></button> -->
+          <!-- <button data-index="1" aria-label="Slide 2"></button> -->
+          <!-- <button data-index="2" aria-label="Slide 3"></button> -->
           <button data-index="3" aria-label="Slide 4"></button>
           <button data-index="4" aria-label="Slide 5"></button>
         </div>
@@ -1362,19 +1398,22 @@ window.addEventListener('scroll', () => {
 /* ═══════════════════════════════════════════════════════════
    TILT ON PLAN CARDS
 ═══════════════════════════════════════════════════════════ */
-document.querySelectorAll('.plan-card').forEach(card => {
-  card.addEventListener('mousemove', e => {
-    const r = card.getBoundingClientRect();
-    const x = (e.clientX - r.left) / r.width  - 0.5;
-    const y = (e.clientY - r.top)  / r.height - 0.5;
-    card.style.transform = `translateY(-8px) rotateX(${-y*6}deg) rotateY(${x*6}deg)`;
-    card.style.transition = 'transform 0.1s';
+const canTilt = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+if (canTilt) {
+  document.querySelectorAll('.plan-card').forEach(card => {
+    card.addEventListener('mousemove', e => {
+      const r = card.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width  - 0.5;
+      const y = (e.clientY - r.top)  / r.height - 0.5;
+      card.style.transform = `translateY(-8px) rotateX(${-y*6}deg) rotateY(${x*6}deg)`;
+      card.style.transition = 'transform 0.1s';
+    });
+    card.addEventListener('mouseleave', () => {
+      card.style.transform = '';
+      card.style.transition = 'transform 0.4s cubic-bezier(0.23,1,0.32,1)';
+    });
   });
-  card.addEventListener('mouseleave', () => {
-    card.style.transform = '';
-    card.style.transition = 'transform 0.4s cubic-bezier(0.23,1,0.32,1)';
-  });
-});
+}
 
 /* ═══════════════════════════════════════════════════════════
    BMI CALCULATOR
@@ -1474,6 +1513,7 @@ function calculateBMR() {
    SLIDERS
 ═══════════════════════════════════════════════════════════ */
 function initSlider(sliderId, navId) {
+  const sliderEl = document.getElementById(sliderId);
   const slides = document.querySelectorAll('#'+sliderId+' img');
   const dots   = document.querySelectorAll('#'+navId+' button');
   if (!slides.length||!dots.length) return;
@@ -1486,10 +1526,83 @@ function initSlider(sliderId, navId) {
   function startAuto() { timer=setInterval(()=>goTo(current+1),3500); }
   function stopAuto()  { clearInterval(timer); }
   dots.forEach(dot => { dot.addEventListener('click',()=>{ stopAuto(); goTo(parseInt(dot.dataset.index)); startAuto(); }); });
+
+  /* Swipe support for touch devices */
+  if (sliderEl) {
+    let touchStartX = 0, touchStartY = 0, touchMoved = false;
+    sliderEl.addEventListener('touchstart', e => {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      touchMoved = false;
+      stopAuto();
+    }, { passive: true });
+    sliderEl.addEventListener('touchmove', () => { touchMoved = true; }, { passive: true });
+    sliderEl.addEventListener('touchend', e => {
+      if (!touchMoved) { startAuto(); return; }
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      const dy = e.changedTouches[0].clientY - touchStartY;
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+        goTo(dx < 0 ? current + 1 : current - 1);
+      }
+      startAuto();
+    });
+  }
+
   startAuto();
 }
 initSlider('featuredSlider','featuredSliderNav');
 initSlider('mainSlider','sliderNav');
+
+/* ═══════════════════════════════════════════════════════════
+   TESTIMONIAL SLIDER (text cards, variable height)
+═══════════════════════════════════════════════════════════ */
+function initTestimonialSlider(sliderId, navId, prevId, nextId) {
+  const sliderEl = document.getElementById(sliderId);
+  const cards = sliderEl ? sliderEl.querySelectorAll('.testimonial-card') : [];
+  const dots  = document.querySelectorAll('#'+navId+' button');
+  const prevBtn = document.getElementById(prevId);
+  const nextBtn = document.getElementById(nextId);
+  if (!sliderEl || !cards.length || !dots.length) return;
+  let current = 0, timer;
+
+  function setHeight() {
+    sliderEl.style.height = cards[current].offsetHeight + 'px';
+  }
+  function goTo(n) {
+    cards[current].classList.remove('active'); dots[current].classList.remove('active');
+    current = (n + cards.length) % cards.length;
+    cards[current].classList.add('active'); dots[current].classList.add('active');
+    setHeight();
+  }
+  function startAuto() { timer = setInterval(() => goTo(current + 1), 6000); }
+  function stopAuto()  { clearInterval(timer); }
+
+  dots.forEach(dot => { dot.addEventListener('click', () => { stopAuto(); goTo(parseInt(dot.dataset.index)); startAuto(); }); });
+  if (prevBtn) prevBtn.addEventListener('click', () => { stopAuto(); goTo(current - 1); startAuto(); });
+  if (nextBtn) nextBtn.addEventListener('click', () => { stopAuto(); goTo(current + 1); startAuto(); });
+
+  /* Swipe support */
+  let touchStartX = 0, touchStartY = 0, touchMoved = false;
+  sliderEl.addEventListener('touchstart', e => {
+    touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY;
+    touchMoved = false; stopAuto();
+  }, { passive: true });
+  sliderEl.addEventListener('touchmove', () => { touchMoved = true; }, { passive: true });
+  sliderEl.addEventListener('touchend', e => {
+    if (!touchMoved) { startAuto(); return; }
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+      goTo(dx < 0 ? current + 1 : current - 1);
+    }
+    startAuto();
+  });
+
+  window.addEventListener('resize', setHeight);
+  setHeight();
+  startAuto();
+}
+initTestimonialSlider('testimonialSlider','testimonialSliderNav','testimonialPrev','testimonialNext');
 </script>
 </body>
 </html>
